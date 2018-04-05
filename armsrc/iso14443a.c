@@ -88,8 +88,7 @@ uint8_t trigger = 0;
 // the block number for the ISO14443-4 PCB
 static uint8_t iso14_pcb_blocknum = 0;
 
-int manchester_recv_started = 0;
-int recorded = 0;
+uint32_t start_ts = 0;
 
 //
 // ISO14443 timing:
@@ -507,8 +506,6 @@ static RAMFUNC int ManchesterDecoding(uint8_t bit, uint16_t offset, uint32_t non
 					Demod.collisionPos = (Demod.len << 3) + Demod.bitCount;
 				}
 			}
-			if(!recorded)
-				manchester_recv_started = 1; //specify that the data transfer has begun
 			// modulation in first half only - Sequence D = 1.
 			Demod.bitCount++;
 			Demod.shiftReg = (Demod.shiftReg >> 1) | 0x100;				// in both cases, add a 1 to the shiftreg
@@ -1589,10 +1586,8 @@ int EmSendPrecompiledCmd(tag_response_info_t *response_info) {
 static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receivedResponsePar, uint16_t offset)
 {
 	uint32_t c;
-	uint32_t start_ts = GetCountSspClk();
 	uint32_t end_ts = 0;
-	manchester_recv_started = 0;
-	recorded = 0;
+	int manchester_recv_started = 1;
 	
 	// Set FPGA mode to "reader listen mode", no modulation (listen
 	// only, since we are receiving, not transmitting).
@@ -1618,10 +1613,9 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 
 		if(AT91C_BASE_SSC->SSC_SR & AT91C_SSC_RXRDY) { 
 			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR; //read in 1 byte of data from the RHR
-			if(manchester_recv_started){
+			if(manchester_recv_started && b != 0){ //b is 0 until an actual PICC response data comes back through the FPGA
 				end_ts = GetCountSspClk();
 				manchester_recv_started = 0;
-				recorded = 1;
 			}
 
 			//Perform the manchester decoding on the 1 byte just received.
@@ -2046,7 +2040,7 @@ void ReaderIso14443a(UsbCommand *c)
 	byte_t buf[USB_CMD_DATA_SIZE] = {0};
 	uint8_t par[MAX_PARITY_SIZE];
 	bool cantSELECT = false;
-	uint32_t start_ts = 0, end_ts = 0;
+	uint32_t end_ts = 0;
   
 	set_tracing(true);
 	
