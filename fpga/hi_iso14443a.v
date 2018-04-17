@@ -32,7 +32,29 @@ module hi_iso14443a(
 
 wire adc_clk = ck_1356meg;
 
-
+//Divide the incoming pck0 clock by 3 to produce a 16MHz clock.
+reg pck_clkdiv = 0;
+reg [1:0] count = 2'b0;
+//We need to trigger on both edges of the clock, but doing so is not possible in a single
+//always block. Therefore, two always blocks are used.
+always @(posedge pck0) 
+begin
+  if (count == 2'b10) begin
+	pck_clkdiv <= ~pck_clkdiv;
+	count <= 2'b0;
+  end
+  else
+	count <= count + 1;
+end
+always @(negedge pck0)
+begin
+  if (count == 2'b10) begin
+        pck_clkdiv <= ~pck_clkdiv;
+        count <= 2'b0;
+  end
+  else
+        count <= count + 1;
+end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Reader -> PM3:
