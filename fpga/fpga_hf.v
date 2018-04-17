@@ -19,6 +19,7 @@
 `include "hi_iso14443a.v"
 `include "hi_sniffer.v"
 `include "util.v"
+`include "clk_divider.v"
 
 module fpga_hf(
 	input spck, output miso, input mosi, input ncs,
@@ -30,6 +31,12 @@ module fpga_hf(
 	input cross_hi, input cross_lo,
 	output dbg
 );
+
+//We will set adc_clk = pck0 / 3 = 48MHz / 3 = 16MHz
+wire [7:0] pck_cnt;
+wire [7:0] divisor = 8'b00000011;
+wire pck_divclk;
+clk_divider div_clk(pck0, divisor, pck_cnt, pck_divclk);
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
@@ -116,7 +123,7 @@ hi_simulate hs(
 );
 
 hi_iso14443a hisn(
-	pck0, ck_1356meg, ck_1356megb,
+	pck0, ck_1356meg, ck_1356megb, pck_divclk,
 	hisn_pwr_lo, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3,	hisn_pwr_oe4,
 	adc_d, hisn_adc_clk,
 	hisn_ssp_frame, hisn_ssp_din, ssp_dout, hisn_ssp_clk,

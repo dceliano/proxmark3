@@ -3,6 +3,7 @@
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
 
+
 // constants for the different modes:
 `define SNIFFER			3'b000
 `define TAGSIM_LISTEN	3'b001
@@ -11,7 +12,7 @@
 `define READER_MOD		3'b100
 
 module hi_iso14443a(
-    pck0, ck_1356meg, ck_1356megb,
+    pck0, pck_divclk, ck_1356meg, ck_1356megb,
     pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4,
     adc_d, adc_clk,
     ssp_frame, ssp_din, ssp_dout, ssp_clk,
@@ -19,7 +20,7 @@ module hi_iso14443a(
     dbg,
     mod_type
 );
-    input pck0, ck_1356meg, ck_1356megb;
+    input pck0, pck_divclk, ck_1356meg, ck_1356megb;
     output pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4;
     input [7:0] adc_d;
     output adc_clk;
@@ -30,7 +31,7 @@ module hi_iso14443a(
     input [2:0] mod_type;
 
 
-wire adc_clk = ck_1356meg;
+wire adc_clk = pck_divclk;
 
 
 
