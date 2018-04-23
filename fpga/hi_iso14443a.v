@@ -598,6 +598,7 @@ assign pwr_oe2 = 1'b0;
 assign pwr_lo = 1'b0;
 
 
-assign dbg = negedge_cnt[3];
+//assign dbg = negedge_cnt[3];
+assign dbg = ck_1356meg;
 
 endmodule
