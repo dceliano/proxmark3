@@ -16,12 +16,12 @@
 #NET "adc_clk"  LOC = "P46"  ; 
 #NET "adc_noe"  LOC = "P47"  ; 
 NET "ck_1356meg"  LOC = "P91"  ; 
-#NET "ck_1356megb"  LOC = "P93"  ; 
+NET "ck_1356megb"  LOC = "P93"  ; 
 #NET "cross_lo"  LOC = "P87"  ; 
-#NET "dbg"  LOC = "P22"  ; 
+NET "dbg"  LOC = "P22"  ; 
 #NET "mosi"  LOC = "P43"  ; 
 #NET "ncs"  LOC = "P44"  ; 
-#NET "pck0"  LOC = "P36"  ; 
+NET "pck0"  LOC = "P36"  ; 
 #NET "pwr_hi"  LOC = "P80"  ; 
 #NET "pwr_lo"  LOC = "P81"  ; 
 #NET "pwr_oe1"  LOC = "P82"  ; 
