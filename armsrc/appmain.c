@@ -1400,7 +1400,7 @@ void  __attribute__((noreturn)) AppMain(void)
 	AT91C_BASE_PMC->PMC_SCER = AT91C_PMC_PCK0;
 	// PCK0 is PLL clock / 4 = 96Mhz / 4 = 24Mhz
 	AT91C_BASE_PMC->PMC_PCKR[0] = AT91C_PMC_CSS_PLL_CLK |
-		AT91C_PMC_PRES_CLK_4; //  4 for 24Mhz pck0, 2 for 48 MHZ pck0
+		AT91C_PMC_PRES_CLK_2; //  4 for 24Mhz pck0, 2 for 48 MHZ pck0
 	AT91C_BASE_PIOA->PIO_OER = GPIO_PCK0;
 
 	// Reset SPI
