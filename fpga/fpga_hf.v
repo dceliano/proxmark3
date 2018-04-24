@@ -21,10 +21,13 @@
 `include "util.v"
 */
 module fpga_hf(
-        input pck0,
+	input pck0,
 	input ck_1356meg,
 	input ck_1356megb,
-        output dbg
+	input spck,
+	input mosi,
+	input ncs,
+	output dbg
 );
 
 reg clk1 = 1'b0;
@@ -38,7 +41,7 @@ always @(negedge clk_source) begin
 end
 wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
 assign dbg = clk_copy;
-/*
+
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
 // the logic looks at to determine how to connect the A/D and the coil
@@ -92,7 +95,7 @@ wire [2:0] hi_simulate_mod_type = conf_word[2:0];
 // major modes, and use muxes to connect the outputs of the active mode to
 // the output pins.
 //-----------------------------------------------------------------------------
-
+/*
 hi_read_tx ht(
 	pck0, ck_1356meg, ck_1356megb,
 	ht_pwr_lo, ht_pwr_hi, ht_pwr_oe1, ht_pwr_oe2, ht_pwr_oe3, ht_pwr_oe4,
