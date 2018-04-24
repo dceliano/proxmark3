@@ -40,7 +40,26 @@ always @(negedge clk_source) begin
         clk2 <= ~clk2;
 end
 wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
-assign dbg = clk_copy;
+
+//Divide the clk_copy (which should be 48MHz) by 3 to produce a 16MHz clock
+reg [1:0] pos_count, neg_count;
+wire [1:0] r_nxt;
+wire pck_clkdiv;
+ 
+always @(posedge clk_copy)
+if (pos_count ==2) pos_count <= 0;
+else pos_count<= pos_count +1;
+ 
+always @(negedge clk_copy)
+if (neg_count ==2) neg_count <= 0;
+else neg_count<= neg_count +1;
+ 
+assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
+
+
+assign dbg = pck_clkdiv;
+
+
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
