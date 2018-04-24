@@ -230,11 +230,6 @@ reg [7:0] to_arm;
 
 always @(negedge adc_clk)
 begin
-	if (negedge_cnt[5:0] == 6'd63)							// fill the buffer
-	begin
-		to_arm[7:0] <= {mod_sig_ptr[4:0], mod_sig_flip[3:1]}; // feedback timing information
-	end	
-
 	if(negedge_cnt[3:0] == 4'b0000 && mod_type != `SNIFFER)
 	begin
 		// Don't shift if we just loaded new data, obviously.
