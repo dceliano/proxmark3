@@ -60,12 +60,6 @@ wire osc_clk = ck_1356meg;
 wire adc_clk = ck_1356meg;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Reader -> PM3:
-// detecting and shaping the reader's signal. Reader will modulate the carrier by 100% (signal is either on or off). Use a 
-// hysteresis (Schmitt Trigger) to avoid false triggers during slowly increasing or decreasing carrier amplitudes
-reg after_hysteresis;
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tag -> PM3
@@ -174,16 +168,14 @@ end
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tag+Reader -> PM3
+// Tag -> PM3
 // sample 4 bits reader data and 4 bits tag data for sniffing
-reg [3:0] reader_data;
 reg [3:0] tag_data;
 
 always @(negedge osc_clk)
 begin
     if(negedge_cnt[3:0] == 4'd0)
 	begin
-        reader_data[3:0] <= {reader_data[2:0], after_hysteresis};
 		tag_data[3:0] <= {tag_data[2:0], curbit};
 	end
 end	
@@ -291,5 +283,6 @@ assign pwr_lo = 1'b0;
 assign dbg = negedge_cnt[3];
 
 endmodule
+
 
 
