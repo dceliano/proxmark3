@@ -29,32 +29,36 @@ module hi_iso14443a(
     output dbg;
     input [2:0] mod_type;
 
+reg clk1 = 1'b0;
+reg clk2 = 1'b0;
+wire clk_source = pck0;
+always @(posedge clk_source) begin
+        clk1 <= ~clk1;
+end
+always @(negedge clk_source) begin
+        clk2 <= ~clk2;
+end
+wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
+
+//Divide the clk_copy (which should be 48MHz) by 3 to produce a 16MHz clock
+reg [1:0] pos_count, neg_count;
+wire [1:0] r_nxt;
+wire pck_clkdiv;
+ 
+always @(posedge clk_copy)
+if (pos_count ==2) pos_count <= 0;
+else pos_count<= pos_count +1;
+ 
+always @(negedge clk_copy)
+if (neg_count ==2) neg_count <= 0;
+else neg_count<= neg_count +1;
+ 
+assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
+
+
 
 wire adc_clk = ck_1356meg;
 
-//Divide the incoming pck0 clock by 3 to produce a 16MHz clock.
-reg pck_clkdiv = 0;
-reg [1:0] count = 2'b0;
-//We need to trigger on both edges of the clock, but doing so is not possible in a single
-//always block. Therefore, two always blocks are used.
-/*always @(posedge pck0) 
-begin
-  if (count == 2'b10) begin
-	pck_clkdiv <= ~pck_clkdiv;
-	count <= 2'b0;
-  end
-  else
-	count <= count + 1;
-end
-always @(negedge pck0)
-begin
-  if (count == 2'b10) begin
-        pck_clkdiv <= ~pck_clkdiv;
-        count <= 2'b0;
-  end
-  else
-        count <= count + 1;
-end*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Reader -> PM3:
@@ -598,24 +602,6 @@ assign pwr_oe2 = 1'b0;
 assign pwr_lo = 1'b0;
 
 
-//assign dbg = negedge_cnt[3];
-//reg pck0_wire=0;
-//always @(posedge pck0) begin
-//	pck0_wire <= ~pck0_wire;
-//end
-
-//assign dbg = pck0_wire;
-reg clk1 = 1'b0;
-reg clk2 = 1'b0;
-wire clk_source = pck0;
-always @(posedge clk_source) begin
-        clk1 <= ~clk1;
-end
-always @(negedge clk_source) begin
-        clk2 <= ~clk2;
-end
-wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
-assign dbg = clk_copy;
-
+assign dbg = negedge_cnt[3];
 
 endmodule

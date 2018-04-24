@@ -12,53 +12,24 @@
 // Added ISO14443-A support by Gerhard de Koning Gans, April 2008
 // iZsh <izsh at fail0verflow.com>, June 2014
 //-----------------------------------------------------------------------------
-/*
+
 `include "hi_read_tx.v"
 `include "hi_read_rx_xcorr.v"
 `include "hi_simulate.v"
 `include "hi_iso14443a.v"
 `include "hi_sniffer.v"
 `include "util.v"
-*/
+
 module fpga_hf(
-	input pck0,
-	input ck_1356meg,
-	input ck_1356megb,
-	input spck,
-	input mosi,
-	input ncs,
+	input spck, output miso, input mosi, input ncs,
+	input pck0, input ck_1356meg, input ck_1356megb,
+	output pwr_lo, output pwr_hi,
+	output pwr_oe1, output pwr_oe2, output pwr_oe3, output pwr_oe4,
+	input [7:0] adc_d, output adc_clk, output adc_noe,
+	output ssp_frame, output ssp_din, input ssp_dout, output ssp_clk,
+	input cross_hi, input cross_lo,
 	output dbg
 );
-
-reg clk1 = 1'b0;
-reg clk2 = 1'b0;
-wire clk_source = pck0;
-always @(posedge clk_source) begin
-        clk1 <= ~clk1;
-end
-always @(negedge clk_source) begin
-        clk2 <= ~clk2;
-end
-wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
-
-//Divide the clk_copy (which should be 48MHz) by 3 to produce a 16MHz clock
-reg [1:0] pos_count, neg_count;
-wire [1:0] r_nxt;
-wire pck_clkdiv;
- 
-always @(posedge clk_copy)
-if (pos_count ==2) pos_count <= 0;
-else pos_count<= pos_count +1;
- 
-always @(negedge clk_copy)
-if (neg_count ==2) neg_count <= 0;
-else neg_count<= neg_count +1;
- 
-assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
-
-
-assign dbg = pck_clkdiv;
-
 
 
 //-----------------------------------------------------------------------------
@@ -114,7 +85,7 @@ wire [2:0] hi_simulate_mod_type = conf_word[2:0];
 // major modes, and use muxes to connect the outputs of the active mode to
 // the output pins.
 //-----------------------------------------------------------------------------
-/*
+
 hi_read_tx ht(
 	pck0, ck_1356meg, ck_1356megb,
 	ht_pwr_lo, ht_pwr_hi, ht_pwr_oe1, ht_pwr_oe2, ht_pwr_oe3, ht_pwr_oe4,
@@ -188,5 +159,5 @@ mux8 mux_dbg			(major_mode, dbg,       ht_dbg,       hrxc_dbg,       hs_dbg,    
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;
-*/
+
 endmodule
