@@ -55,7 +55,7 @@ else neg_count<= neg_count +1;
  
 assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
 
-
+wire osc_clk = ck_1356meg;
 
 wire adc_clk = ck_1356meg;
 
@@ -65,7 +65,7 @@ wire adc_clk = ck_1356meg;
 // detecting and shaping the reader's signal. Reader will modulate the carrier by 100% (signal is either on or off). Use a 
 // hysteresis (Schmitt Trigger) to avoid false triggers during slowly increasing or decreasing carrier amplitudes
 reg after_hysteresis;
-reg [11:0] has_been_low_for;
+reg [11:0] has_been_low_for;/*
 
 always @(negedge adc_clk)
 begin
@@ -97,9 +97,9 @@ begin
     end
 	
 end
+*/
 
-
-
+/*
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Reader -> PM3
 // detect when a reader is active (modulating). We assume that the reader is active, if we see the carrier off for at least 8 
@@ -129,7 +129,7 @@ begin
 			saw_deep_modulation <= saw_deep_modulation + 1;
 	end
 end
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ end
 // store 4 previous samples:
 reg [7:0] input_prev_4, input_prev_3, input_prev_2, input_prev_1;
 
-always @(negedge adc_clk)
+always @(negedge osc_clk)
 begin
 	input_prev_4 <= input_prev_3;
 	input_prev_3 <= input_prev_2;
@@ -168,7 +168,7 @@ reg [3:0] reader_falling_edge_time;
 reg [6:0] negedge_cnt;
 
 always @(negedge adc_clk)
-begin
+begin/*
 	// detect a reader signal's falling edge and remember its timing:
 	pre_after_hysteresis <= after_hysteresis;
 	if (pre_after_hysteresis && ~after_hysteresis)
@@ -192,8 +192,8 @@ begin
 			negedge_cnt <= negedge_cnt + 1;				// Continue as usual
 		end
 		reader_falling_edge_time[3:0] <= 4'd8;			// adjust only once per detected edge
-	end
-	else if (negedge_cnt == 7'd127)						// normal operation: count from 0 to 127
+	end*/
+	if (negedge_cnt == 7'd127)						// normal operation: count from 0 to 127
 	begin
 		negedge_cnt <= 0;
 	end	
@@ -209,7 +209,7 @@ end
 // determine best possible time for starting/resetting the modulation detector.
 reg [3:0] mod_detect_reset_time;
 
-always @(negedge adc_clk)
+always @(negedge osc_clk)
 begin
 	if (mod_type == `READER_LISTEN) 
 	// (our) reader signal changes at negedge_cnt[3:0]=9, tag response expected to start n*16+4 ticks later, further delayed by
@@ -220,7 +220,7 @@ begin
 	begin
 		mod_detect_reset_time <= 4'd4;
 	end
-	else
+	/*else
 	if (mod_type == `SNIFFER)
 	begin
 		// detect a rising edge of reader's signal and sync modulation detector to the tag's answer:
@@ -232,7 +232,7 @@ begin
 		begin
 			mod_detect_reset_time <= negedge_cnt[3:0] - 4'd3;
 		end
-	end
+	end*/
 end
 
 
@@ -246,7 +246,7 @@ reg curbit;
 
 `define EDGE_DETECT_THRESHOLD	5
 
-always @(negedge adc_clk)
+always @(negedge osc_clk)
 begin
 	if(negedge_cnt[3:0] == mod_detect_reset_time)
 	begin
@@ -283,7 +283,7 @@ end
 reg [3:0] reader_data;
 reg [3:0] tag_data;
 
-always @(negedge adc_clk)
+always @(negedge osc_clk)
 begin
     if(negedge_cnt[3:0] == 4'd0)
 	begin
@@ -299,7 +299,7 @@ end
 // a delay line to ensure that we send the (emulated) tag's answer at the correct time according to ISO14443-3
 reg [31:0] mod_sig_buf;
 reg [4:0] mod_sig_ptr;
-reg mod_sig;
+/*reg mod_sig;
 
 always @(negedge adc_clk)
 begin
@@ -316,7 +316,7 @@ begin
 	end
 end
 
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PM3 -> Reader, internal timing:
@@ -329,7 +329,7 @@ reg [10:0] fdt_counter;
 reg fdt_indicator, fdt_elapsed;
 reg [3:0] mod_sig_flip;
 reg [3:0] sub_carrier_cnt;
-
+/*
 // we want to achieve a delay of 1172. The RF part already has delayed the reader signals's rising edge
 // by 9 ticks, the ADC took 3 ticks and there is always a delay of 32 ticks by the mod_sig_buf. Therefore need to
 // count to 1172 - 9 - 3 - 32 = 1128
@@ -379,7 +379,7 @@ begin
 	
 	if(fdt_counter == `FDT_INDICATOR_COUNT) fdt_indicator <= 1'b1;
 end
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PM3 -> Reader or Tag
@@ -387,9 +387,9 @@ end
 // or undelayed when sending to a tag
 reg mod_sig_coil;
 
-always @(negedge adc_clk)
+always @(negedge osc_clk)
 begin
-	if (mod_type == `TAGSIM_MOD)			 // need to take care of proper fdt timing
+	/*if (mod_type == `TAGSIM_MOD)			 // need to take care of proper fdt timing
 	begin
 		if(fdt_counter == `FDT_COUNT)
 		begin
@@ -403,14 +403,14 @@ begin
 			end
 		end
 	end
-	else 									// other modes: don't delay
+	else*/ 									// other modes: don't delay
 	begin
 		mod_sig_coil <= ssp_dout;
 	end	
 end
 
 
-
+/*
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PM3 -> Reader
 // determine the required delay in the mod_sig_buf (set mod_sig_ptr).
@@ -452,7 +452,7 @@ begin
 		end
 	end
 end
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,7 +464,7 @@ always @(negedge adc_clk)
 begin
 	if (negedge_cnt[5:0] == 6'd63)							// fill the buffer
 	begin
-		if (mod_type == `SNIFFER)
+		/*if (mod_type == `SNIFFER)
 		begin
 			if(deep_modulation) 							// a reader is sending (or there's no field at all)
 			begin
@@ -475,20 +475,20 @@ begin
 				to_arm <= {reader_data[3:0], tag_data[3:0]};
 			end			
 		end
-		else
+		else*/
 		begin
 			to_arm[7:0] <= {mod_sig_ptr[4:0], mod_sig_flip[3:1]}; // feedback timing information
 		end
 	end	
 
-	if(negedge_cnt[2:0] == 3'b000 && mod_type == `SNIFFER)	// shift at double speed
+	/*if(negedge_cnt[2:0] == 3'b000 && mod_type == `SNIFFER)	// shift at double speed
 	begin
 		// Don't shift if we just loaded new data, obviously.
 		if(negedge_cnt[5:0] != 6'd0)
 		begin
 			to_arm[7:1] <= to_arm[6:0];
 		end
-	end
+	end*/
 
 	if(negedge_cnt[3:0] == 4'b0000 && mod_type != `SNIFFER)
 	begin
@@ -510,7 +510,7 @@ reg ssp_frame;
 
 always @(negedge adc_clk)
 begin
-	if(mod_type == `SNIFFER)
+	/*if(mod_type == `SNIFFER)
 	// SNIFFER mode (ssp_clk = adc_clk / 8, ssp_frame clock = adc_clk / 64)):
 	begin
 		if(negedge_cnt[2:0] == 3'd0)
@@ -523,7 +523,7 @@ begin
 		if(negedge_cnt[5:0] == 6'd8)	
 			ssp_frame <= 1'b0;
 	end
-	else
+	else*/
 	// all other modes (ssp_clk = adc_clk / 16, ssp_frame clock = adc_clk / 128):
 	begin
 		if(negedge_cnt[3:0] == 4'd0)
@@ -551,26 +551,24 @@ begin
 	if(negedge_cnt[3:0] == 4'd0)
 	begin
 		// What do we communicate to the ARM
-		if(mod_type == `TAGSIM_LISTEN) 
+		/*if(mod_type == `TAGSIM_LISTEN) 
 			sendbit = after_hysteresis;
 		else if(mod_type == `TAGSIM_MOD)
-			/* if(fdt_counter > 11'd772) sendbit = mod_sig_coil; // huh?
-			else */ 
 			sendbit = fdt_indicator;
-		else if (mod_type == `READER_LISTEN)
+		else*/ if (mod_type == `READER_LISTEN)
 			sendbit = curbit;
 		else
 			sendbit = 1'b0;
 	end
 
 
-	if(mod_type == `SNIFFER)
+	/*if(mod_type == `SNIFFER)
 		// send sampled reader and tag data:
 		bit_to_arm = to_arm[7];
 	else if (mod_type == `TAGSIM_MOD && fdt_elapsed && temp_buffer_reset)
 		// send timing information:
 		bit_to_arm = to_arm[7];
-	else
+	else*/
 		// send data or fdt_indicator
 		bit_to_arm = sendbit;
 end
