@@ -21,19 +21,31 @@
 `include "util.v"
 */
 module fpga_hf(
-        input pck0, input ck_1356meg, input ck_1356megb,
-	output dbg
+        input pck0,
+	input ck_1356meg,
+	input ck_1356megb,
+        output dbg
 );
 
-assign dbg = 1'b0;
-
+reg clk1 = 1'b0;
+reg clk2 = 1'b0;
+wire clk_source = pck0;
+always @(posedge clk_source) begin
+        clk1 <= ~clk1;
+end
+always @(negedge clk_source) begin
+        clk2 <= ~clk2;
+end
+wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
+assign dbg = clk_copy;
+/*
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
 // the logic looks at to determine how to connect the A/D and the coil
 // drivers (i.e., which section gets it). Also assign some symbolic names
 // to the configuration bits, for use below.
 //-----------------------------------------------------------------------------
-/*
+
 reg [15:0] shift_reg;
 reg [7:0] conf_word;
 

@@ -605,5 +605,17 @@ assign pwr_lo = 1'b0;
 //end
 
 //assign dbg = pck0_wire;
+reg clk1 = 1'b0;
+reg clk2 = 1'b0;
+wire clk_source = pck0;
+always @(posedge clk_source) begin
+        clk1 <= ~clk1;
+end
+always @(negedge clk_source) begin
+        clk2 <= ~clk2;
+end
+wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
+assign dbg = clk_copy;
+
 
 endmodule
