@@ -65,7 +65,6 @@ wire adc_clk = ck_1356meg;
 // detecting and shaping the reader's signal. Reader will modulate the carrier by 100% (signal is either on or off). Use a 
 // hysteresis (Schmitt Trigger) to avoid false triggers during slowly increasing or decreasing carrier amplitudes
 reg after_hysteresis;
-reg [11:0] has_been_low_for;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,8 +98,6 @@ wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // internal FPGA timing. Maximum required period is 128 carrier clock cycles for a full 8 Bit transfer to ARM. (i.e. we need a 
 // 7 bit counter). Adjust its frequency to external reader's clock when simulating a tag or sniffing.
-reg pre_after_hysteresis; 
-reg [3:0] reader_falling_edge_time;
 reg [6:0] negedge_cnt;
 
 always @(negedge adc_clk)
@@ -192,25 +189,6 @@ begin
 end	
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PM3 -> Reader:
-// a delay line to ensure that we send the (emulated) tag's answer at the correct time according to ISO14443-3
-reg [4:0] mod_sig_ptr;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PM3 -> Reader, internal timing:
-// a timer for the 1172 cycles fdt (Frame Delay Time). Start the timer with a rising edge of the reader's signal.
-// set fdt_elapsed when we no longer need to delay data. Set fdt_indicator when we can start sending data.
-// Note: the FPGA only takes care for the 1172 delay. To achieve an additional 1236-1172=64 ticks delay, the ARM must send
-// a correction bit (before the start bit). The correction bit will be coded as 00010000, i.e. it adds 4 bits to the 
-// transmission stream, causing the required additional delay.
-reg [10:0] fdt_counter;
-reg fdt_indicator, fdt_elapsed;
-reg [3:0] mod_sig_flip;
-reg [3:0] sub_carrier_cnt;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PM3 -> Reader or Tag
 // assign a modulation signal to the antenna. This signal is either a delayed signal (to achieve fdt when sending to a reader)
@@ -283,7 +261,6 @@ begin
 			sendbit = 1'b0;
 	end
 
-	// send data or fdt_indicator
 	bit_to_arm = sendbit;
 end
 
@@ -292,9 +269,6 @@ end
 
 assign ssp_din = bit_to_arm;
 
-// Subcarrier (adc_clk/16, for TAGSIM_MOD only).
-wire sub_carrier;
-assign sub_carrier = ~sub_carrier_cnt[3];
 
 // in READER_MOD: drop carrier for mod_sig_coil==1 (pause); in READER_LISTEN: carrier always on; in other modes: carrier always off
 assign pwr_hi = (ck_1356megb & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN)));	
@@ -304,10 +278,10 @@ assign pwr_hi = (ck_1356megb & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (
 assign pwr_oe1 = 1'b0;
 assign pwr_oe3 = 1'b0;
 
-// TAGSIM_MOD: short circuit antenna with different resistances (modulated by sub_carrier modulated by mod_sig_coil)
+// TAGSIM_MOD: short circuit antenna with different resistances (modulated by mod_sig_coil)
 // for pwr_oe4 = 1 (tristate): antenna load = 10k || 33			= 32,9 Ohms
 // for pwr_oe4 = 0 (active):   antenna load = 10k || 33 || 33  	= 16,5 Ohms
-assign pwr_oe4 = mod_sig_coil & sub_carrier & (mod_type == `TAGSIM_MOD);
+assign pwr_oe4 = mod_sig_coil & (mod_type == `TAGSIM_MOD);
 
 // This is all LF, so doesn't matter.
 assign pwr_oe2 = 1'b0;
@@ -317,4 +291,5 @@ assign pwr_lo = 1'b0;
 assign dbg = negedge_cnt[3];
 
 endmodule
+
 
