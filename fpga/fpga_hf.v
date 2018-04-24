@@ -12,24 +12,30 @@
 // Added ISO14443-A support by Gerhard de Koning Gans, April 2008
 // iZsh <izsh at fail0verflow.com>, June 2014
 //-----------------------------------------------------------------------------
-
+/*
 `include "hi_read_tx.v"
 `include "hi_read_rx_xcorr.v"
 `include "hi_simulate.v"
 `include "hi_iso14443a.v"
 `include "hi_sniffer.v"
 `include "util.v"
-
+*/
 module fpga_hf(
-	input spck, output miso, input mosi, input ncs,
-	input pck0, input ck_1356meg, input ck_1356megb,
-	output pwr_lo, output pwr_hi,
-	output pwr_oe1, output pwr_oe2, output pwr_oe3, output pwr_oe4,
-	input [7:0] adc_d, output adc_clk, output adc_noe,
-	output ssp_frame, output ssp_din, input ssp_dout, output ssp_clk,
-	input cross_hi, input cross_lo,
-	output dbg
+        input spck, output miso, input mosi, input ncs,
+        input pck0, input ck_1356meg, input ck_1356megb,
+        output pwr_lo, output pwr_hi,
+        output pwr_oe1, output pwr_oe2, output pwr_oe3, output pwr_oe4,
+        input [7:0] adc_d, output adc_clk, output adc_noe,
+        output ssp_frame, output ssp_din, input ssp_dout, output ssp_clk,
+        input cross_hi, input cross_lo,
+        output dbg
 );
+
+reg placeholder;
+always @(posedge ck_1356meg)
+begin
+	placeholder <= ~placeholder;
+end
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
@@ -37,7 +43,7 @@ module fpga_hf(
 // drivers (i.e., which section gets it). Also assign some symbolic names
 // to the configuration bits, for use below.
 //-----------------------------------------------------------------------------
-
+/*
 reg [15:0] shift_reg;
 reg [7:0] conf_word;
 
@@ -158,5 +164,5 @@ mux8 mux_dbg			(major_mode, dbg,       ht_dbg,       hrxc_dbg,       hs_dbg,    
 
 // In all modes, let the ADC's outputs be enabled.
 assign adc_noe = 1'b0;
-
+*/
 endmodule

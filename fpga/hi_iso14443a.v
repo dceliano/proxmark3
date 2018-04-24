@@ -37,7 +37,7 @@ reg pck_clkdiv = 0;
 reg [1:0] count = 2'b0;
 //We need to trigger on both edges of the clock, but doing so is not possible in a single
 //always block. Therefore, two always blocks are used.
-always @(posedge pck0) 
+/*always @(posedge pck0) 
 begin
   if (count == 2'b10) begin
 	pck_clkdiv <= ~pck_clkdiv;
@@ -54,7 +54,7 @@ begin
   end
   else
         count <= count + 1;
-end
+end*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Reader -> PM3:
@@ -599,6 +599,11 @@ assign pwr_lo = 1'b0;
 
 
 //assign dbg = negedge_cnt[3];
-assign dbg = ck_1356meg;
+//reg pck0_wire=0;
+//always @(posedge pck0) begin
+//	pck0_wire <= ~pck0_wire;
+//end
+
+//assign dbg = pck0_wire;
 
 endmodule
