@@ -15,10 +15,12 @@ module fpga_lf(
 	output pwr_lo, output pwr_hi,
 	output pwr_oe1, output pwr_oe2, output pwr_oe3, output pwr_oe4,
 	input [7:0] adc_d, output adc_clk, output adc_noe,
-	output ssp_frame, output ssp_din, input ssp_dout, output ssp_clk,
+	output ssp_frame_actual, output ssp_din, input ssp_dout, output ssp_clk_actual,
 	input cross_hi, input cross_lo,
 	output dbg
 );
+assign ssp_frame_actual = 0'b1;
+assign ssp_clk_actual = 0'b1;
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of

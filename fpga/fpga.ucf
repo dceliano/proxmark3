@@ -29,10 +29,10 @@ NET "pwr_oe2"  LOC = "P83"  ;
 NET "pwr_oe3"  LOC = "P84"  ; 
 NET "pwr_oe4"  LOC = "P86"  ; 
 NET "spck"  LOC = "P39"  ; 
-NET "ssp_clk"  LOC = "P71"  ; 
+NET "ssp_clk_actual"  LOC = "P71"  ; 
 NET "ssp_din"  LOC = "P32"  ; 
 NET "ssp_dout"  LOC = "P34"  ; 
-NET "ssp_frame"  LOC = "P31"  ; 
+NET "ssp_frame_actual"  LOC = "P31"  ; 
 
 #PACE: Start of PACE Area Constraints
 
