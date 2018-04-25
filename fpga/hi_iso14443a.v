@@ -11,7 +11,7 @@
 `define READER_MOD		3'b100
 
 module hi_iso14443a(
-    pck0, ck_1356meg, ck_1356megb,
+    pck0, ck_1356meg, ck_1356megb, pck_clkdiv,
     pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4,
     adc_d, adc_clk,
     ssp_frame, ssp_din, ssp_dout, ssp_clk,
@@ -19,7 +19,7 @@ module hi_iso14443a(
     dbg,
     mod_type
 );
-    input pck0, ck_1356meg, ck_1356megb;
+    input pck0, ck_1356meg, ck_1356megb, pck_clkdiv;
     output pwr_lo, pwr_hi, pwr_oe1, pwr_oe2, pwr_oe3, pwr_oe4;
     input [7:0] adc_d;
     output adc_clk;
@@ -29,63 +29,22 @@ module hi_iso14443a(
     output dbg;
     input [2:0] mod_type;
 
-reg clk1 = 1'b0;
-reg clk2 = 1'b0;
-wire clk_source = pck0;
-always @(posedge clk_source) begin
-        clk1 <= ~clk1;
-end
-always @(negedge clk_source) begin
-        clk2 <= ~clk2;
-end
-wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
 
-//Divide the clk_copy (which should be 48MHz) by 3 to produce a 16MHz clock
-reg [1:0] pos_count, neg_count;
-wire [1:0] r_nxt;
-wire pck_clkdiv;
- 
-always @(posedge clk_copy)
-if (pos_count ==2) pos_count <= 0;
-else pos_count<= pos_count +1;
- 
-always @(negedge clk_copy)
-if (neg_count ==2) neg_count <= 0;
-else neg_count<= neg_count +1;
- 
-assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
-
+//wire osc_clk = pck0;
 wire osc_clk = ck_1356meg;
-
+//wire osc_clk = pck_clkdiv;
 wire adc_clk = ck_1356meg;
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tag -> PM3
-// filter the input for a tag's signal. The filter box needs the 4 previous input values and is a gaussian derivative filter
-// for noise reduction and edge detection.
-// store 4 previous samples:
-reg [7:0] input_prev_4, input_prev_3, input_prev_2, input_prev_1;
-
-always @(negedge osc_clk)
+wire test2 = pck_clkdiv;
+wire test3 = pck0;
+reg test = 1'b0;
+always @(negedge test2)
 begin
-	input_prev_4 <= input_prev_3;
-	input_prev_3 <= input_prev_2;
-	input_prev_2 <= input_prev_1;
-	input_prev_1 <= adc_d;
-end	
+	test <= ~test;
+end
+//assign pwr_oe2 = test;
+assign dbg = ck_1356meg;
 
-// adc_d_filtered = 2*input_prev4 + 1*input_prev3 + 0*input_prev2 - 1*input_prev1 - 2*input
-//					= (2*input_prev4 + input_prev3) - (2*input + input_prev1) 
-wire [8:0] input_prev_4_times_2 = input_prev_4 << 1;
-wire [8:0] adc_d_times_2 		= adc_d << 1;
-
-wire [9:0] tmp1 = input_prev_4_times_2 + input_prev_3;
-wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
-
-// convert intermediate signals to signed and calculate the filter output
-wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 
 
 	
@@ -107,27 +66,17 @@ begin
 end	
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tag -> PM3:
 // determine best possible time for starting/resetting the modulation detector.
-reg [3:0] mod_detect_reset_time;
+// (our) reader signal changes at negedge_cnt[3:0]=9, tag response expected to start n*16+4 ticks later, further delayed by
+// 3 ticks ADC conversion. The maximum filter output (edge detected) will be detected after subcarrier zero crossing (+7 ticks).
+// To allow some timing variances, we want to have the maximum filter outputs well within the detection window, i.e.
+// at mod_detect_reset_time+4 and mod_detect_reset_time+12  (-4 ticks).
+// 9 + 4 + 3 + 7 - 4  = 19.    19 mod 16 = 3
+wire [3:0] mod_detect_reset_time = 4'd4;
 
-always @(negedge osc_clk)
-begin
-	if (mod_type == `READER_LISTEN) 
-	// (our) reader signal changes at negedge_cnt[3:0]=9, tag response expected to start n*16+4 ticks later, further delayed by
-	// 3 ticks ADC conversion. The maximum filter output (edge detected) will be detected after subcarrier zero crossing (+7 ticks).
-	// To allow some timing variances, we want to have the maximum filter outputs well within the detection window, i.e.
-	// at mod_detect_reset_time+4 and mod_detect_reset_time+12  (-4 ticks).
-	// 9 + 4 + 3 + 7 - 4  = 19.    19 mod 16 = 3
-	begin
-		mod_detect_reset_time <= 4'd4;
-	end
-end
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tag -> PM3:
 // modulation detector. Looks for the steepest falling and rising edges within a 16 clock period. If there is both a significant
 // falling and rising edge (in any order), a modulation is detected.
 reg signed [10:0] rx_mod_falling_edge_max;
@@ -165,6 +114,31 @@ begin
 
 end
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Tag -> PM3
+// filter the input for a tag's signal. The filter box needs the 4 previous input values and is a gaussian derivative filter
+// for noise reduction and edge detection.
+// store 4 previous samples:
+reg [7:0] input_prev_4, input_prev_3, input_prev_2, input_prev_1;
+
+always @(negedge osc_clk)
+begin
+        input_prev_4 <= input_prev_3;
+        input_prev_3 <= input_prev_2;
+        input_prev_2 <= input_prev_1;
+        input_prev_1 <= adc_d;
+end
+
+// adc_d_filtered = 2*input_prev4 + 1*input_prev3 + 0*input_prev2 - 1*input_prev1 - 2*input
+//                                      = (2*input_prev4 + input_prev3) - (2*input + input_prev1)
+wire [8:0] input_prev_4_times_2 = input_prev_4 << 1;
+wire [8:0] adc_d_times_2                = adc_d << 1;
+
+wire [9:0] tmp1 = input_prev_4_times_2 + input_prev_3;
+wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
+
+// convert intermediate signals to signed and calculate the filter output
+wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +146,7 @@ end
 // sample 4 bits reader data and 4 bits tag data for sniffing
 reg [3:0] tag_data;
 
-always @(negedge osc_clk)
+always @(negedge pck_clkdiv)
 begin
     if(negedge_cnt[3:0] == 4'd0)
 	begin
@@ -280,7 +254,7 @@ assign pwr_oe2 = 1'b0;
 assign pwr_lo = 1'b0;
 
 
-assign dbg = negedge_cnt[3];
+//assign dbg = negedge_cnt[3];
 
 endmodule
 
