@@ -13,13 +13,13 @@
 // iZsh <izsh at fail0verflow.com>, June 2014
 //-----------------------------------------------------------------------------
 
-/*`include "hi_read_tx.v"
-`include "hi_read_rx_xcorr.v"
-`include "hi_simulate.v"
-`include "hi_iso14443a.v"
-`include "hi_sniffer.v"
-`include "util.v"
-*/
+// constants for the different ISO14443a modes:
+`define SNIFFER			3'b000
+`define TAGSIM_LISTEN	3'b001
+`define TAGSIM_MOD		3'b010
+`define READER_LISTEN	3'b011
+`define READER_MOD		3'b100
+
 module fpga_hf(
 	input spck, output miso, input mosi, input ncs,
 	input pck0, input ck_1356meg, input ck_1356megb,
@@ -31,19 +31,9 @@ module fpga_hf(
 	output dbg
 );
 
-//Tie all unused pins low to get rid of errors.
-/*assign pwr_lo = 1'b0;
-ssign pwr_hi = 1'b0;
-assign pwr_oe1 = 1'b0;
-assign pwr_oe2 = 1'b0;
-assign pwr_oe3 = 1'b0;
-assign pwr_oe4 = 1'b0;
-assign adc_clk = 1'b0;
-assign adc_noe = 1'b0;
-assign ssp_frame = 1'b0;
-assign ssp_din = 1'b0;
-assign ssp_clk = 1'b0;
-*/
+//-----------------------------------------------------------------------------
+// Produce a 16MHz clock, based on pck0, used for overclocking.
+//-----------------------------------------------------------------------------
 reg clk1 = 1'b0;
 reg clk2 = 1'b0;
 wire clk_source = pck0;
@@ -70,8 +60,6 @@ else neg_count<= neg_count +1;
 
 assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
 
-assign dbg = pck_clkdiv;
-
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
@@ -79,7 +67,6 @@ assign dbg = pck_clkdiv;
 // drivers (i.e., which section gets it). Also assign some symbolic names
 // to the configuration bits, for use below.
 //-----------------------------------------------------------------------------
-
 reg [15:0] shift_reg;
 reg [7:0] conf_word;
 
@@ -120,103 +107,35 @@ wire hi_read_rx_xcorr_quarter = conf_word[2];
 
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type = conf_word[2:0];
+wire [2:0] mod_type = hi_simulate_mod_type;
+
 
 //-----------------------------------------------------------------------------
-// And then we instantiate the modules corresponding to each of the FPGA's
-// major modes, and use muxes to connect the outputs of the active mode to
-// the output pins.
-//-----------------------------------------------------------------------------
-/*
-hi_read_tx ht(
-	pck0, ck_1356meg, ck_1356megb,
-	ht_pwr_lo, ht_pwr_hi, ht_pwr_oe1, ht_pwr_oe2, ht_pwr_oe3, ht_pwr_oe4,
-	adc_d, ht_adc_clk,
-	ht_ssp_frame, ht_ssp_din, ssp_dout, ht_ssp_clk,
-	cross_hi, cross_lo,
-	ht_dbg,
-	hi_read_tx_shallow_modulation
-);
-
-hi_read_rx_xcorr hrxc(
-	pck0, ck_1356meg, ck_1356megb,
-	hrxc_pwr_lo, hrxc_pwr_hi, hrxc_pwr_oe1, hrxc_pwr_oe2, hrxc_pwr_oe3,	hrxc_pwr_oe4,
-	adc_d, hrxc_adc_clk,
-	hrxc_ssp_frame, hrxc_ssp_din, ssp_dout, hrxc_ssp_clk,
-	cross_hi, cross_lo,
-	hrxc_dbg,
-	hi_read_rx_xcorr_848, hi_read_rx_xcorr_snoop, hi_read_rx_xcorr_quarter
-);
-
-hi_simulate hs(
-	pck0, ck_1356meg, ck_1356megb,
-	hs_pwr_lo, hs_pwr_hi, hs_pwr_oe1, hs_pwr_oe2, hs_pwr_oe3, hs_pwr_oe4,
-	adc_d, hs_adc_clk,
-	hs_ssp_frame, hs_ssp_din, ssp_dout, hs_ssp_clk,
-	cross_hi, cross_lo,
-	hs_dbg,
-	hi_simulate_mod_type
-);
-
-hi_iso14443a hisn(
-	pck0, ck_1356meg, ck_1356megb, pck_clkdiv,
-	hisn_pwr_lo, hisn_pwr_hi, hisn_pwr_oe1, hisn_pwr_oe2, hisn_pwr_oe3,	hisn_pwr_oe4,
-	adc_d, hisn_adc_clk,
-	hisn_ssp_frame, hisn_ssp_din, ssp_dout, hisn_ssp_clk,
-	cross_hi, cross_lo,
-	hisn_dbg,
-	hi_simulate_mod_type
-);
-
-hi_sniffer he(
-       pck0, ck_1356meg, ck_1356megb,
-       he_pwr_lo, he_pwr_hi, he_pwr_oe1, he_pwr_oe2, he_pwr_oe3,       he_pwr_oe4,
-       adc_d, he_adc_clk,
-       he_ssp_frame, he_ssp_din, ssp_dout, he_ssp_clk,
-       cross_hi, cross_lo,
-       he_dbg,
-       hi_read_rx_xcorr_848, hi_read_rx_xcorr_snoop, hi_read_rx_xcorr_quarter
-);
-
-// Major modes:
-
-//   000 --  HF reader, transmitting to tag; modulation depth selectable
-//   001 --  HF reader, receiving from tag, correlating as it goes; frequency selectable
-//   010 --  HF simulated tag
-//   011 --  HF ISO14443-A
-//   100 --  HF Snoop
-//   111 --  everything off
-
-mux8 mux_ssp_clk		(major_mode, ssp_clk,   ht_ssp_clk,   hrxc_ssp_clk,   hs_ssp_clk,   hisn_ssp_clk,   he_ssp_clk, 1'b0, 1'b0, 1'b0);
-mux8 mux_ssp_din		(major_mode, ssp_din,   ht_ssp_din,   hrxc_ssp_din,   hs_ssp_din,   hisn_ssp_din,   he_ssp_din, 1'b0, 1'b0, 1'b0);
-mux8 mux_ssp_frame		(major_mode, ssp_frame, ht_ssp_frame, hrxc_ssp_frame, hs_ssp_frame, hisn_ssp_frame, he_ssp_frame, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_oe1		(major_mode, pwr_oe1,   ht_pwr_oe1,   hrxc_pwr_oe1,   hs_pwr_oe1,   hisn_pwr_oe1,   he_pwr_oe1, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_oe2		(major_mode, pwr_oe2,   ht_pwr_oe2,   hrxc_pwr_oe2,   hs_pwr_oe2,   hisn_pwr_oe2,   he_pwr_oe2, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_oe3		(major_mode, pwr_oe3,   ht_pwr_oe3,   hrxc_pwr_oe3,   hs_pwr_oe3,   hisn_pwr_oe3,   he_pwr_oe3, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_oe4		(major_mode, pwr_oe4,   ht_pwr_oe4,   hrxc_pwr_oe4,   hs_pwr_oe4,   hisn_pwr_oe4,   he_pwr_oe4, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_lo			(major_mode, pwr_lo,    ht_pwr_lo,    hrxc_pwr_lo,    hs_pwr_lo,    hisn_pwr_lo,    he_pwr_lo, 1'b0, 1'b0, 1'b0);
-mux8 mux_pwr_hi			(major_mode, pwr_hi,    ht_pwr_hi,    hrxc_pwr_hi,    hs_pwr_hi,    hisn_pwr_hi,    he_pwr_hi, 1'b0, 1'b0, 1'b0);
-mux8 mux_adc_clk		(major_mode, adc_clk,   ht_adc_clk,   hrxc_adc_clk,   hs_adc_clk,   hisn_adc_clk,   he_adc_clk, 1'b0, 1'b0, 1'b0);
-mux8 mux_dbg			(major_mode, dbg,       ht_dbg,       hrxc_dbg,       hs_dbg,       hisn_dbg,       he_dbg, 1'b0, 1'b0, 1'b0);
-*/
-// In all modes, let the ADC's outputs be enabled.
-assign adc_noe = 1'b0;
-
-//-----------------------------------------------------------------------------
+// Begin integrated file:
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-
-// constants for the different modes:
-`define SNIFFER			3'b000
-`define TAGSIM_LISTEN	3'b001
-`define TAGSIM_MOD		3'b010
-`define READER_LISTEN	3'b011
-`define READER_MOD		3'b100
-
-wire osc_clk = ck_1356meg;
+wire osc_clk = ck_1356meg; //change this to change the clock source.
 assign adc_clk = osc_clk;
 
-wire [2:0] mod_type = hi_simulate_mod_type;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// internal FPGA timing. Maximum required period is 128 carrier clock cycles for a full 8 Bit transfer to ARM. (i.e. we need a 
+// 7 bit counter). Adjust its frequency to external reader's clock when simulating a tag or sniffing.
+reg [6:0] negedge_cnt;
+
+// normal operation: count negedge_cnt from 0 to 127, then wrap back to 0
+always @(negedge osc_clk)
+begin
+	if (negedge_cnt == 7'd127)
+	begin
+		negedge_cnt <= 0;
+	end	
+	else
+	begin
+		negedge_cnt <= negedge_cnt + 1;
+	end
+end	
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tag -> PM3
@@ -243,28 +162,6 @@ wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
 
 // convert intermediate signals to signed and calculate the filter output
 wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
-
-
-	
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// internal FPGA timing. Maximum required period is 128 carrier clock cycles for a full 8 Bit transfer to ARM. (i.e. we need a 
-// 7 bit counter). Adjust its frequency to external reader's clock when simulating a tag or sniffing.
-reg [6:0] negedge_cnt;
-
-always @(negedge osc_clk)
-begin
-	if (negedge_cnt == 7'd127)						// normal operation: count from 0 to 127
-	begin
-		negedge_cnt <= 0;
-	end	
-	else
-	begin
-		negedge_cnt <= negedge_cnt + 1;
-	end
-end	
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tag -> PM3:
 // determine best possible time for starting/resetting the modulation detector.
@@ -338,9 +235,10 @@ begin
 end
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FPGA -> ARM communication:
-// buffer 8 bits data to be sent to ARM. Shift them out bit by bit.
+// buffer 8 bits of data to be sent to ARM. Shift them out bit by bit.
 reg [7:0] to_arm;
 
 always @(negedge osc_clk)
@@ -353,10 +251,28 @@ begin
 			to_arm[7:1] <= to_arm[6:0];
 		end
 	end
-	
+end
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FPGA -> ARM communication:
+// select the data to be sent to the ARM
+reg bit_to_arm;
+reg sendbit;
+
+always @(negedge osc_clk)
+begin
+	if(negedge_cnt[3:0] == 4'd0)
+	begin
+		// What do we communicate to the ARM
+		if (mod_type == `READER_LISTEN)
+			sendbit = curbit;
+		else
+			sendbit = 1'b0;
+	end
+
+	bit_to_arm = sendbit;
 end
 
-
+assign ssp_din = bit_to_arm;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FPGA <-> ARM communication:
 // generate a ssp clock and ssp frame signal for the synchronous transfer from/to the ARM
@@ -384,48 +300,29 @@ end
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// FPGA -> ARM communication:
-// select the data to be sent to ARM
-reg bit_to_arm;
-reg sendbit;
-
-always @(negedge osc_clk)
-begin
-	if(negedge_cnt[3:0] == 4'd0)
-	begin
-		// What do we communicate to the ARM
-		if (mod_type == `READER_LISTEN)
-			sendbit = curbit;
-		else
-			sendbit = 1'b0;
-	end
-
-	bit_to_arm = sendbit;
-end
-
-
-
-
-assign ssp_din = bit_to_arm;
-
-
+// Send the signal out the antenna
 // in READER_MOD: drop carrier for mod_sig_coil==1 (pause); in READER_LISTEN: carrier always on; in other modes: carrier always off
-assign pwr_hi = (ck_1356megb & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN)));	
+assign pwr_hi = (osc_clk & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN)));	
 
 
-// Enable HF antenna drivers:
-assign pwr_oe1 = 1'b0;
-assign pwr_oe3 = 1'b0;
 
-// TAGSIM_MOD: short circuit antenna with different resistances (modulated by mod_sig_coil)
-// for pwr_oe4 = 1 (tristate): antenna load = 10k || 33			= 32,9 Ohms
-// for pwr_oe4 = 0 (active):   antenna load = 10k || 33 || 33  	= 16,5 Ohms
-assign pwr_oe4 = mod_sig_coil & (mod_type == `TAGSIM_MOD);
+//-----------------------------------------------------------------------------
+// Misc pin assignments, including debugging pin
+//-----------------------------------------------------------------------------
 
-// This is all LF, so doesn't matter.
+// In all modes, let the ADC's outputs be enabled.
+assign adc_noe = 1'b0;
+// Placeholders for LF pins (doesn't matter for HF comms)
 assign pwr_oe2 = 1'b0;
 assign pwr_lo = 1'b0;
+// Permanently enable HF antenna drivers (active low):
+assign pwr_oe1 = 1'b0;
+assign pwr_oe3 = 1'b0;
+assign pwr_oe4 = 1'b0;
+
+assign dbg = pck_clkdiv;
 
 
 
 endmodule
+
