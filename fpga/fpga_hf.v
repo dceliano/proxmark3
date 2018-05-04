@@ -92,17 +92,13 @@ end
 wire [2:0] major_mode;
 assign major_mode = conf_word[7:5];
 
-// For the high-frequency transmit configuration: modulation depth, either
-// 100% (just quite driving antenna, steady LOW), or shallower (tri-state
-// some fraction of the buffers)
+//unused
 wire hi_read_tx_shallow_modulation = conf_word[0];
-
-// For the high-frequency receive correlator: frequency against which to
-// correlate.
+//unused
 wire hi_read_rx_xcorr_848 = conf_word[0];
-// and whether to drive the coil (reader) or just short it (snooper)
+//unused
 wire hi_read_rx_xcorr_snoop = conf_word[1];
-// divide subcarrier frequency by 4
+//unused
 wire hi_read_rx_xcorr_quarter = conf_word[2];
 
 // For the high-frequency simulated tag: what kind of modulation to use.
@@ -115,16 +111,16 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-wire osc_clk = pck_clkdiv; //change this to change the clock source.
+wire osc_clk = ck_1356meg; //change this to change the clock source.
 assign adc_clk = osc_clk;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// internal FPGA timing. Maximum required period is 128 carrier clock cycles for a full 8 Bit transfer to ARM. (i.e. we need a 
+// internal FPGA timing. Maximum required period is 128 carrier clock cycles for a full 8-bit transfer to ARM. (i.e. we need a 
 // 7 bit counter). Adjust its frequency to external reader's clock when simulating a tag or sniffing.
+// In normal operation, negedge_cnt counts from 0 to 127, then wraps back to 0
 reg [6:0] negedge_cnt;
 
-// normal operation: count negedge_cnt from 0 to 127, then wrap back to 0
 always @(negedge osc_clk)
 begin
 	if (negedge_cnt == 7'd127)
@@ -163,16 +159,17 @@ wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
 // convert intermediate signals to signed and calculate the filter output
 wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tag -> PM3:
-// determine best possible time for starting/resetting the modulation detector.
-// (our) reader signal changes at negedge_cnt[3:0]=9, tag response expected to start n*16+4 ticks later, further delayed by
-// 3 ticks ADC conversion. The maximum filter output (edge detected) will be detected after subcarrier zero crossing (+7 ticks).
+// First, we determine best possible time for starting/resetting the modulation detector.
+// (Our) reader signal changes at negedge_cnt[3:0]=9 (based on when data is received from the SSC).
+// The tag response is expected to start 4 ticks later, further delayed by
+// 3 clock ticks for ADC conversion. The maximum filter output (edge detected) will be detected after subcarrier zero crossing (+7 ticks).
 // To allow some timing variances, we want to have the maximum filter outputs well within the detection window, i.e.
 // at mod_detect_reset_time+4 and mod_detect_reset_time+12  (-4 ticks).
 // 9 + 4 + 3 + 7 - 4  = 19.    19 mod 16 = 3
 wire [3:0] mod_detect_reset_time = 4'd4;
 
-// modulation detector. Looks for the steepest falling and rising edges within a 16 clock period. If there is both a significant
+// Modulation detector for the 847kHz (fc / 16) subcarrier.
+// Looks for the steepest falling and rising edges within a 16 clock period. If there is both a significant
 // falling and rising edge (in any order), a modulation is detected.
 reg signed [10:0] rx_mod_falling_edge_max;
 reg signed [10:0] rx_mod_rising_edge_max;
@@ -193,7 +190,7 @@ begin
 		rx_mod_rising_edge_max <= 0;
 		rx_mod_falling_edge_max <= 0;
 	end
-	else											// look for steepest edges (slopes)
+	else // look for steepest edges (slopes)
 	begin
 		if (adc_d_filtered > 0)
 		begin
@@ -210,7 +207,7 @@ begin
 end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tag -> PM3
-// sample 4 bits of reader data 
+// sample 4 bits of reader data
 reg [3:0] tag_data;
 
 always @(negedge osc_clk)
@@ -235,46 +232,8 @@ begin
 end
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// FPGA -> ARM communication:
-// buffer 8 bits of data to be sent to ARM. Shift them out bit by bit.
-reg [7:0] to_arm;
-
-always @(negedge osc_clk)
-begin
-	if(negedge_cnt[3:0] == 4'b0000 && mod_type != `SNIFFER)
-	begin
-		// Don't shift if we just loaded new data, obviously.
-		if(negedge_cnt[6:0] != 7'd0)
-		begin
-			to_arm[7:1] <= to_arm[6:0];
-		end
-	end
-end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// FPGA -> ARM communication:
-// select the data to be sent to the ARM
-reg bit_to_arm;
-reg sendbit;
-
-always @(negedge osc_clk)
-begin
-	if(negedge_cnt[3:0] == 4'd0)
-	begin
-		// What do we communicate to the ARM
-		if (mod_type == `READER_LISTEN)
-			sendbit = curbit;
-		else
-			sendbit = 1'b0;
-	end
-
-	bit_to_arm = sendbit;
-end
-
-assign ssp_din = bit_to_arm;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// FPGA <-> ARM communication:
+// FPGA <-> ARM clock:
 // generate a ssp clock and ssp frame signal for the synchronous transfer from/to the ARM
 reg ssp_clk;
 reg ssp_frame;
@@ -296,12 +255,31 @@ begin
 			ssp_frame <= 1'b0;
 	end	
 end
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FPGA -> ARM communication:
+// select the data to be sent to the ARM
+reg bit_to_arm;
+reg sendbit;
+
+always @(negedge osc_clk)
+begin
+	if(negedge_cnt[3:0] == 4'd0)
+	begin
+		if (mod_type == `READER_LISTEN)
+			sendbit = curbit;
+		else
+			sendbit = 1'b0;
+	end
+	bit_to_arm = sendbit;
+end
+
+assign ssp_din = bit_to_arm;
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Send the signal out the antenna
-// in READER_MOD: drop carrier for mod_sig_coil==1 (pause); in READER_LISTEN: carrier always on; in other modes: carrier always off
+// in READER_MOD: drop carrier for mod_sig_coil==1 (pause); in READER_LISTEN: carrier always on
 assign pwr_hi = (osc_clk & (((mod_type == `READER_MOD) & ~mod_sig_coil) || (mod_type == `READER_LISTEN)));	
 
 
