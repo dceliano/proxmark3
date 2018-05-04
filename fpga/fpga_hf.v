@@ -111,7 +111,8 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-wire osc_clk = pck_clkdiv; //change this to change the clock source.
+//wire osc_clk = pck_clkdiv; //change this to change the clock source.
+wire osc_clk = ck_1356meg;
 assign adc_clk = osc_clk;
 
 
@@ -138,7 +139,7 @@ end
 // filter the input for a tag's signal. The filter box needs the 4 previous input values and is a gaussian derivative filter
 // for noise reduction and edge detection.
 // store 4 previous samples:
-reg [7:0] input_prev_4, input_prev_3, input_prev_2, input_prev_1;
+/*reg [7:0] input_prev_4, input_prev_3, input_prev_2, input_prev_1;
 
 always @(negedge osc_clk)
 begin
@@ -158,6 +159,9 @@ wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
 
 // convert intermediate signals to signed and calculate the filter output
 wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
+*/
+wire signed [10:0] adc_d_filtered = {2'b0, adc_d};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // First, we determine best possible time for starting/resetting the modulation detector.
 // negedge_cnt[3:0] is a 4-bit counter, so therefore counts from 0 to 15 and then wraps back to 0.
