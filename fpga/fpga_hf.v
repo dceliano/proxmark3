@@ -160,7 +160,8 @@ wire [9:0] tmp2 = adc_d_times_2 + input_prev_1;
 wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // First, we determine best possible time for starting/resetting the modulation detector.
-// (Our) reader signal changes at negedge_cnt[3:0]=9 (based on when data is received from the SSC).
+// negedge_cnt[3:0] is a 4-bit counter, so therefore counts from 0 to 15 and then wraps back to 0.
+// (Our) reader signal changes at negedge_cnt[3:0]=9.
 // The tag response is expected to start 4 ticks later, further delayed by
 // 3 clock ticks for ADC conversion. The maximum filter output (edge detected) will be detected after subcarrier zero crossing (+7 ticks).
 // To allow some timing variances, we want to have the maximum filter outputs well within the detection window, i.e.
@@ -168,9 +169,10 @@ wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 // 9 + 4 + 3 + 7 - 4  = 19.    19 mod 16 = 3
 wire [3:0] mod_detect_reset_time = 4'd4;
 
-// Modulation detector for the 847kHz (fc / 16) subcarrier.
-// Looks for the steepest falling and rising edges within a 16 clock period. If there is both a significant
+// Modulation detector for the 848kHz (fc / 16) subcarrier.
+// Looks for the steepest falling and rising edges within a period of 16 carrier clock cycles. If there is both a significant
 // falling and rising edge (in any order), a modulation is detected.
+// The output of this modulation detection is curbit (current bit), which eventually gets sent to the ARM.
 reg signed [10:0] rx_mod_falling_edge_max;
 reg signed [10:0] rx_mod_rising_edge_max;
 reg curbit;
@@ -190,7 +192,7 @@ begin
 		rx_mod_rising_edge_max <= 0;
 		rx_mod_falling_edge_max <= 0;
 	end
-	else // look for steepest edges (slopes)
+	else // look for the steepest edges (slopes)
 	begin
 		if (adc_d_filtered > 0)
 		begin
@@ -234,7 +236,18 @@ end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FPGA <-> ARM clock:
-// generate a ssp clock and ssp frame signal for the synchronous transfer from/to the ARM
+// Generate the ssp clock and ssp frame signal for the synchronous transfer to and from the ARM
+// start of transfer/start of frame is indicated by the rise of the ssp_frame signal
+// ssp_din changes on the rising edge of the ssp_clk clock and is clocked into
+// the ARM by the falling edge of ssp_clk
+// ssp_clk = osc_clk / 16, ssp_frame = osc_clk / 128. That is, we send a bit every 16 clock cycles.
+// Example of ssp transfer of binary value 1100101:
+//             _______________________________
+// ssp_frame__|                               |__
+//             _______         ___     ___
+// ssp_din  __|       |_______|   |___|   |______
+//         _   _   _   _   _   _   _   _   _   _
+// ssp_clk  |_| |_| |_| |_| |_| |_| |_| |_| |_| |_
 reg ssp_clk;
 reg ssp_frame;
 assign ssp_clk_actual = ssp_clk;
@@ -242,14 +255,12 @@ assign ssp_frame_actual = ssp_frame;
 
 always @(negedge osc_clk)
 begin
-	// (ssp_clk = adc_clk / 16, ssp_frame clock = adc_clk / 128):
 	begin
 		if(negedge_cnt[3:0] == 4'd0)
 			ssp_clk <= 1'b1;
 		if(negedge_cnt[3:0] == 4'd8) 
 			ssp_clk <= 1'b0;
-
-		if(negedge_cnt[6:0] == 7'd7)	// ssp_frame rising edge indicates start of frame
+		if(negedge_cnt[6:0] == 7'd7)
 			ssp_frame <= 1'b1;
 		if(negedge_cnt[6:0] == 7'd23)
 			ssp_frame <= 1'b0;
@@ -257,13 +268,13 @@ begin
 end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FPGA -> ARM communication:
-// select the data to be sent to the ARM
+// Select the bit to be sent to the ARM.
 reg bit_to_arm;
 reg sendbit;
 
 always @(negedge osc_clk)
 begin
-	if(negedge_cnt[3:0] == 4'd0)
+	if(negedge_cnt[3:0] == 4'd0) //negedge_cnt[3:0] counts from 0 to 15. Therefore, we only select a new bit to send to the ARM every 16 carrier clock cycles.
 	begin
 		if (mod_type == `READER_LISTEN)
 			sendbit = curbit;
