@@ -111,7 +111,7 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-wire osc_clk = pck_clkdiv; //change this to change the clock source.
+wire osc_clk = ck_1356meg; //change this to change the clock source.
 assign adc_clk = osc_clk;
 
 
@@ -167,7 +167,7 @@ wire signed [10:0] adc_d_filtered = {1'b0, tmp1} - {1'b0, tmp2};
 // To allow some timing variances, we want to have the maximum filter outputs well within the detection window, i.e.
 // at mod_detect_reset_time+4 and mod_detect_reset_time+12  (-4 ticks).
 // 9 + 4 + 3 + 7 - 4  = 19.    19 mod 16 = 3
-wire [3:0] mod_detect_reset_time = 4'd4;
+wire [3:0] mod_detect_reset_time = 4'd3;
 
 // Modulation detector for the 848kHz (fc / 16) subcarrier.
 // Looks for the steepest falling and rising edges within a period of 16 carrier clock cycles. If there is both a significant
