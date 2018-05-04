@@ -111,7 +111,7 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-wire osc_clk = pck_clkdiv; //change this to change the clock source.
+wire osc_clk = ck_1356meg; //change this to change the clock source.
 assign adc_clk = osc_clk;
 
 
@@ -309,7 +309,7 @@ assign pwr_oe1 = 1'b0;
 assign pwr_oe3 = 1'b0;
 assign pwr_oe4 = 1'b0;
 
-assign dbg = pck_clkdiv;
+assign dbg = curbit;
 
 
 
