@@ -1608,12 +1608,27 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 	// clear RXRDY by reading the contents of RHR.
     uint8_t b = (uint8_t)AT91C_BASE_SSC->SSC_RHR;
 
+    #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+	#define BYTE_TO_BINARY(byte)  \
+	  (byte & 0x80 ? '1' : '0'), \
+	  (byte & 0x40 ? '1' : '0'), \
+	  (byte & 0x20 ? '1' : '0'), \
+	  (byte & 0x10 ? '1' : '0'), \
+	  (byte & 0x08 ? '1' : '0'), \
+	  (byte & 0x04 ? '1' : '0'), \
+	  (byte & 0x02 ? '1' : '0'), \
+	  (byte & 0x01 ? '1' : '0') 
+
 	c = 0;
+	int byte_count = 0;
+	uint8_t byte_buffer[100];
 	for(;;) {
 		WDT_HIT(); //Watchdog Timer
 
 		if(AT91C_BASE_SSC->SSC_SR & AT91C_SSC_RXRDY) { 
-			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR; //read in 1 byte of data from the RHR
+			b = (uint8_t)AT91C_BASE_SSC->SSC_RHR; //read in 1 byte of data from the RHR. Subsequently clears RXRDY.
+			byte_buffer[byte_count] = b;
+			byte_count++;
 			if(manchester_recv_started && b != 0){ //b is 0 until an actual PICC response data comes back through the FPGA
 				end_ts = GetCountSspClk();
 				manchester_recv_started = 0;
@@ -1624,6 +1639,11 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 				NextTransferTime = MAX(NextTransferTime, Demod.endTime - (DELAY_AIR2ARM_AS_READER + DELAY_ARM2AIR_AS_READER)/16 + FRAME_DELAY_TIME_PICC_TO_PCD);
 				uint32_t cycle_count = end_ts - start_ts;
 				Dbprintf("Finished decoding (Manchester). Value of c=%d. Cycle count (for one bit) = %d", c, cycle_count);
+				Dbprintf("Number of bytes read from the ssp = %d", byte_count);
+				for(int j = 0; j < byte_count; j++){
+					Dbprintf("Byte %d: ", j);
+					Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
+				}
 				return true;
 			} else if (c++ > iso14a_timeout && Demod.state == DEMOD_UNSYNCD) {
 				//we reach here only if we time out (i.e. receiving the data from the PICC takes too long)
