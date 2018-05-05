@@ -1621,7 +1621,7 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 
 	c = 0;
 	int byte_count = 0;
-	uint8_t byte_buffer[100];
+	uint8_t byte_buffer[2000];
 	for(;;) {
 		WDT_HIT(); //Watchdog Timer
 
@@ -1647,7 +1647,7 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 				return true;
 			} else if (c++ > iso14a_timeout && Demod.state == DEMOD_UNSYNCD) {
 				//we reach here only if we time out (i.e. receiving the data from the PICC takes too long)
-				//Dbprintf("Timed out while waiting for PICC response (c = %d)!", c);
+				Dbprintf("Timed out while waiting for PICC response (c = %d)!", c);
 				return false; 
 			}
 		}
