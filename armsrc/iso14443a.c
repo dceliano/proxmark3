@@ -494,6 +494,7 @@ static RAMFUNC int ManchesterDecoding(uint8_t bit, uint16_t offset, uint32_t non
 				Demod.startTime -= Demod.syncBit;
 				Demod.bitCount = offset;			// number of decoded data bits
 				Demod.state = DEMOD_MANCHESTER_DATA;
+				//DISTANCE BOUNDING TIME STAMP SHOULD BE HERE.
 			}
 		}
 

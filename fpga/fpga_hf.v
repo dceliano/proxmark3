@@ -224,10 +224,9 @@ end
 // FPGA <-> ARM clock:
 // Generate the ssp clock and ssp frame signal for the synchronous transfer to and from the ARM
 // start of transfer/start of frame is indicated by the rise of the ssp_frame signal
-// ssp_din changes on the rising edge of the ssp_clk clock and is clocked into
-// the ARM by the falling edge of ssp_clk
+// ssp_din changes on the rising edge of the ssp_clk clock and is clocked into the ARM on the falling edge of ssp_clk
 // ssp_clk = osc_clk / 16, ssp_frame = osc_clk / 128. That is, we send a bit every 16 clock cycles.
-// Example of ssp transfer of binary value 1100101:
+// Example of ssp transfer of binary value 11001010:
 //             _______________________________
 // ssp_frame__|                               |__
 //             _______         ___     ___
