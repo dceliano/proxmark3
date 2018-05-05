@@ -1648,6 +1648,11 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 			} else if (c++ > iso14a_timeout && Demod.state == DEMOD_UNSYNCD) {
 				//we reach here only if we time out (i.e. receiving the data from the PICC takes too long)
 				Dbprintf("Timed out while waiting for PICC response (c = %d)!", c);
+				Dbprintf("Number of bytes read from the ssp = %d", byte_count);
+				for(int j = 0; j < 100; j++){
+					Dbprintf("Byte %d: ", j);
+					Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
+				}
 				return false; 
 			}
 		}
