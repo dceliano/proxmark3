@@ -177,7 +177,7 @@ reg signed [10:0] rx_mod_falling_edge_max;
 reg signed [10:0] rx_mod_rising_edge_max;
 reg curbit;
 
-`define EDGE_DETECT_THRESHOLD	6
+`define EDGE_DETECT_THRESHOLD	10
 
 always @(negedge osc_clk)
 begin
