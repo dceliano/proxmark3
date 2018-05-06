@@ -196,15 +196,15 @@ begin
 	else // look for the steepest edges (slopes)
 	begin
 		if (adc_d_filtered > 0)
-		begin
-			if (adc_d_filtered > rx_mod_falling_edge_max)
-				rx_mod_falling_edge_max <= adc_d_filtered;
-		end
+			begin
+				if (adc_d_filtered > rx_mod_falling_edge_max)
+					rx_mod_falling_edge_max <= adc_d_filtered;
+			end
 		else
-		begin
-			if (adc_d_filtered < rx_mod_rising_edge_max)
-				rx_mod_rising_edge_max <= adc_d_filtered;
-		end
+			begin
+				if (adc_d_filtered < rx_mod_rising_edge_max)
+					rx_mod_rising_edge_max <= adc_d_filtered;
+			end
 	end
 
 end
