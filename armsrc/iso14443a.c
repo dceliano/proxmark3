@@ -89,6 +89,7 @@ uint8_t trigger = 0;
 static uint8_t iso14_pcb_blocknum = 0;
 
 uint32_t start_ts = 0;
+uint32_t end_ts = 0;
 
 //
 // ISO14443 timing:
@@ -494,7 +495,7 @@ static RAMFUNC int ManchesterDecoding(uint8_t bit, uint16_t offset, uint32_t non
 				Demod.startTime -= Demod.syncBit;
 				Demod.bitCount = offset;			// number of decoded data bits
 				Demod.state = DEMOD_MANCHESTER_DATA;
-				//DISTANCE BOUNDING TIME STAMP SHOULD BE HERE.
+				//end_ts = GetCountSspClk(); //this gives a timestamp of when the demodulation begins.
 			}
 		}
 
@@ -1587,7 +1588,6 @@ int EmSendPrecompiledCmd(tag_response_info_t *response_info) {
 static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receivedResponsePar, uint16_t offset)
 {
 	uint32_t c;
-	uint32_t end_ts = 0;
 	int manchester_recv_started = 1;
 	
 	// Set FPGA mode to "reader listen mode", no modulation (listen
