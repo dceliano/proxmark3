@@ -1641,17 +1641,17 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 				Dbprintf("Finished decoding (Manchester). Value of c=%d. Cycle count (for one bit) = %d", c, cycle_count);
 				Dbprintf("Number of bytes read from the ssp = %d", byte_count);
 				for(int j = 0; j < byte_count; j++){
-					Dbprintf("Byte %d: ", j);
-					Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
+					//Dbprintf("Byte %d: ", j);
+					//Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
 				}
 				return true;
 			} else if (c++ > iso14a_timeout && Demod.state == DEMOD_UNSYNCD) {
 				//we reach here only if we time out (i.e. receiving the data from the PICC takes too long)
 				Dbprintf("Timed out while waiting for PICC response (c = %d)!", c);
 				Dbprintf("Number of bytes read from the ssp = %d", byte_count);
-				for(int j = 0; j < 100; j++){
-					Dbprintf("Byte %d: ", j);
-					Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
+				for(int j = 0; j < 50; j++){
+					//Dbprintf("Byte %d: ", j);
+					//Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
 				}
 				return false; 
 			}
@@ -2066,7 +2066,6 @@ void ReaderIso14443a(UsbCommand *c)
 	byte_t buf[USB_CMD_DATA_SIZE] = {0};
 	uint8_t par[MAX_PARITY_SIZE];
 	bool cantSELECT = false;
-	uint32_t end_ts = 0;
   
 	set_tracing(true);
 	
@@ -2145,9 +2144,6 @@ void ReaderIso14443a(UsbCommand *c)
 		}
 		start_ts = GetCountSspClk(); //started just after we send all our bytes to the PICC
 		arg0 = ReaderReceive(buf, par);
-		end_ts = GetCountSspClk(); //ended just after we have received all the response bytes from the PICC.
-		uint32_t cycle_count = end_ts - start_ts;
-		Dbprintf("Cycle count (all bytes) = %d", cycle_count);
 
 		LED_B_ON();
 		cmd_send(CMD_ACK,arg0,0,0,buf,sizeof(buf));
