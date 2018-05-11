@@ -67,7 +67,6 @@ function writePerso()
 	--		0x0C - unexpected command length
 	
 
-<<<<<<< HEAD
 	-- First, set all the data in the card (4kB of data) to zeros. The keys, stored in the sector trailer block, are also set to zeros.
 	-- The only block which cannot be explicitly set is block 0x0000, the manufacturer block.
 	print("Setting values of normal blocks")
@@ -81,21 +80,6 @@ function writePerso()
 	print("Setting AES Sector keys")
 	-- Next, write to the AES sector keys
 	for i=0,39 do --for each sector number
-=======
-
-	cardsize = 4 --need to set to 4 for 4k or 2 for 2k
-	if(cardsize == 4) then
-		numsectors = 39
-	elseif(cardsize == 2) then
-		numsectors = 31
-	else
-		oops("Invalid card size")
-	end
-
-	-- Write to the AES sector keys
-	print("Setting AES Sector keys")
-	for i=0,numsectors do --for each sector number
->>>>>>> mifareplus-only
 		local keyA_block = "40" .. string.format("%02x", i * 2)
 		local keyB_block = "40" .. string.format("%02x", (i * 2) + 1)
 		--Can also calculate the keys fancily to make them unique, if desired
@@ -169,15 +153,9 @@ function getVersion()
 	sendRaw(GETVERS_CONT, true, true)
 end
 
-<<<<<<< HEAD
 function commitPerso()
 	-- commandString = COMMITPERSO .. "01" --switch to SL1
 	commandString = COMMITPERSO .. "03" --switch to SL3
-=======
-function commitPerso(SL)
-	--pass SL as "01" to move to SL1 or "03" to move to SL3.
-	commandString = COMMITPERSO .. SL
->>>>>>> mifareplus-only
 	response = sendRaw(commandString, true, true) --0x90 is returned upon success
 	if string.sub(response, 3, 4) ~= "90" then
 		oops("error occurred while trying to switch security level")
@@ -278,19 +256,8 @@ function main(args)
 	-- Initialize the card using the already-present read14a library
 	info,err = lib14a.read14443a(true, false)
 	--Perform PPS (Protocol and Parameter Selection) check to finish the ISO 14443-4 protocol.
-<<<<<<< HEAD
 	sendRaw("e050", true, true)
 	sendRaw("D01100", true, true)
-=======
-	response = sendRaw("e050", true, true)
-	if(response == nil) then
-		err = "No response from RATS"
-	end
-	response = sendRaw("D01100", true, true)
-	if(response == nil) then
-		err = "No response from PPS check"
-	end
->>>>>>> mifareplus-only
 	if err then
 		oops(err)
 	else
@@ -301,11 +268,7 @@ function main(args)
 	-- Now, the card is initialized and we can do more interesting things.
 
 	--writePerso()
-<<<<<<< HEAD
 	--commitPerso()
-=======
-	--commitPerso("03") --move to SL3
->>>>>>> mifareplus-only
 	--getVersion()
 	proximityCheck()
 
