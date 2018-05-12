@@ -111,7 +111,7 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 //-----------------------------------------------------------------------------
 // The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
 //-----------------------------------------------------------------------------
-reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
+/*reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
 reg miso_sig;
 always @(posedge spck)
 begin
@@ -127,7 +127,8 @@ begin
 end
 
 assign miso = miso_sig;
-
+*/
+assign miso = 1'b0;
 
 
 //-----------------------------------------------------------------------------
