@@ -104,16 +104,23 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // Change the bit on the rising edge of spck because the SPI will read it on the falling edge (because NCPHA = 1 and CPOL = 0). 
 //-----------------------------------------------------------------------------
 reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
+//reg [15:0] miso_shift_reg_sig = 16'hAAAA;
 reg miso_sig = 0'b0;
+reg [3:0] spck_cntr = 4'd0; //counter should automatically roll over
 always @(posedge spck)
 begin
-	begin
-		miso_sig <= miso_shift_reg[0];
-		miso_shift_reg[14:0] <= miso_shift_reg[15:1];
-	end
+	miso_sig <= miso_shift_reg[spck_cntr];
+	spck_cntr <= spck_cntr + 1;
 end
 
 assign miso = miso_sig;
+
+always @(negedge ncs) //beginning a new transmission
+begin
+	miso_shift_reg <= 16'hAAAA;
+	//spck_cntr <= 4'd0;
+end
+//assign miso_shift_reg = miso_shift_reg_sig;
 
 //assign miso = 1'b0;
 
