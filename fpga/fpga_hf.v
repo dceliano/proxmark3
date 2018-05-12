@@ -94,15 +94,6 @@ end
 wire [2:0] major_mode;
 assign major_mode = conf_word[7:5];
 
-// //unused
-// wire hi_read_tx_shallow_modulation = conf_word[0];
-// //unused
-// wire hi_read_rx_xcorr_848 = conf_word[0];
-// //unused
-// wire hi_read_rx_xcorr_snoop = conf_word[1];
-// //unused
-// wire hi_read_rx_xcorr_quarter = conf_word[2];
-
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type = conf_word[2:0];
 wire [2:0] mod_type = hi_simulate_mod_type;
@@ -110,20 +101,16 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 
 //-----------------------------------------------------------------------------
 // The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
+// Change the bit on the rising edge of spck because the SPI will read it on the falling edge (because NCPHA = 1 and CPOL = 0). 
 //-----------------------------------------------------------------------------
 reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
-reg miso_sig;
+reg miso_sig = 0'b0;
 always @(posedge spck)
 begin
-	if(~ncs)
-		begin
-			miso_sig <= miso_shift_reg[0];
-			miso_shift_reg[14:0] <= miso_shift_reg[15:1];
-		end
-	else
-		begin
-			miso_shift_reg <= 16'hAAAA; //reset the value of the miso after we sent out 16 bits of SPI data.
-		end
+	begin
+		miso_sig <= miso_shift_reg[0];
+		miso_shift_reg[14:0] <= miso_shift_reg[15:1];
+	end
 end
 
 assign miso = miso_sig;
