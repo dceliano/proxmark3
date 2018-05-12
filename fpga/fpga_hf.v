@@ -66,40 +66,42 @@ assign pck_clkdiv = ((pos_count == 2) | (neg_count == 2));
 // the logic looks at to determine how to connect the A/D and the coil
 // drivers (i.e., which section gets it). Also assign some symbolic names
 // to the configuration bits, for use below.
+// From the ARM:
+// Sends a 16 bit command/data pair to the FPGA.
+// The bit format is:  C3 C2 C1 C0 D11 D10 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0
+// where C is the 4 bit command and D is the 12 bit data (the configuration word is bits [D7:D0])
 //-----------------------------------------------------------------------------
-reg [15:0] shift_reg;
+reg [15:0] mosi_shift_reg; //ARM to FPGA
 reg [7:0] conf_word;
 
-// We switch modes between transmitting to the 13.56 MHz tag and receiving
-// from it, which means that we must make sure that we can do so without
-// glitching, or else we will glitch the transmitted carrier.
-always @(posedge ncs)
+always @(posedge ncs) //as soon as we finish receiving SPI data from the ARM (ncs goes high when the data xfer is complete)
 begin
-	case(shift_reg[15:12])
-		4'b0001: conf_word <= shift_reg[7:0];		// FPGA_CMD_SET_CONFREG
+	case(mosi_shift_reg[15:12])
+		4'b0001: conf_word <= mosi_shift_reg[7:0];		// FPGA_CMD_SET_CONFREG = (1<<12), as defined in the ARM code
 	endcase
 end
 
+//Receive data from the ARM over SPI and feed it into the shift register bit-by-bit
 always @(posedge spck)
 begin
 	if(~ncs)
 	begin
-		shift_reg[15:1] <= shift_reg[14:0];
-		shift_reg[0] <= mosi;
+		mosi_shift_reg[15:1] <= mosi_shift_reg[14:0];
+		mosi_shift_reg[0] <= mosi;
 	end
 end
 
 wire [2:0] major_mode;
 assign major_mode = conf_word[7:5];
 
-//unused
-wire hi_read_tx_shallow_modulation = conf_word[0];
-//unused
-wire hi_read_rx_xcorr_848 = conf_word[0];
-//unused
-wire hi_read_rx_xcorr_snoop = conf_word[1];
-//unused
-wire hi_read_rx_xcorr_quarter = conf_word[2];
+// //unused
+// wire hi_read_tx_shallow_modulation = conf_word[0];
+// //unused
+// wire hi_read_rx_xcorr_848 = conf_word[0];
+// //unused
+// wire hi_read_rx_xcorr_snoop = conf_word[1];
+// //unused
+// wire hi_read_rx_xcorr_quarter = conf_word[2];
 
 // For the high-frequency simulated tag: what kind of modulation to use.
 wire [2:0] hi_simulate_mod_type = conf_word[2:0];
@@ -107,11 +109,30 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 
 
 //-----------------------------------------------------------------------------
+// The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
+//-----------------------------------------------------------------------------
+reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
+always @(posedge spck)
+begin
+	if(~ncs)
+	begin
+		miso <= miso_shift_reg[0];
+		miso_shift_reg[14:0] <= miso_shift_reg[15:1];
+	end
+end
+
+always @(posedge ncs) //reset the value of the miso after we sent out 16 bits of SPI data.
+begin
+	miso_shift_reg <= 16'hAAAA;
+end
+
+
+//-----------------------------------------------------------------------------
 // Begin integrated file:
 // ISO14443-A support for the Proxmark III
 // Gerhard de Koning Gans, April 2008
 //-----------------------------------------------------------------------------
-wire osc_clk = dbg; //change this to change the clock source.
+wire osc_clk = ck_1356meg; //change this to change the clock source.
 assign adc_clk = osc_clk;
 
 
