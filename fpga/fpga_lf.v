@@ -21,6 +21,7 @@ module fpga_lf(
 );
 assign ssp_frame_actual = 0'b1;
 assign ssp_clk_actual = 0'b1;
+assign miso = 0'b0;
 
 //-----------------------------------------------------------------------------
 // The SPI receiver. This sets up the configuration word, which the rest of
