@@ -31,6 +31,22 @@ module fpga_hf(
 	input dbg
 );
 
+reg mod_sig_coil;
+reg curbit;
+
+//-----------------------------------------------------------------------------
+// Precise timing measurement code
+//-----------------------------------------------------------------------------
+reg db_cycle_count = 16'd0; //a 16-bit cycle counter which will get reported back to the ARM.
+reg count_cycles_flag = 1'b0; //used to enable and disable the counter
+
+always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
+	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
+	else db_cycle_count <= 16'd0;
+	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping clock cycle count
+	if(mod_sig_coil == 1'b1) count_cycles_flag <= 1'b1; //Take beginning time stamp here by starting clock cycle count. mod_sig_coil is active low.
+end
+
 //-----------------------------------------------------------------------------
 // Produce a 16MHz clock, based on pck0, used for overclocking.
 //-----------------------------------------------------------------------------
@@ -189,7 +205,6 @@ wire [3:0] mod_detect_reset_time = 4'd3;
 // The output of this modulation detection is curbit (current bit), which eventually gets sent to the ARM.
 reg signed [10:0] rx_mod_falling_edge_max;
 reg signed [10:0] rx_mod_rising_edge_max;
-reg curbit;
 
 `define EDGE_DETECT_THRESHOLD	40
 
@@ -226,11 +241,10 @@ end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PM3 -> Tag
 // assign a modulation signal to the antenna. This signal is undelayed when sending to a tag
-reg mod_sig_coil;
 
 always @(negedge osc_clk)
 begin
-		mod_sig_coil <= ssp_dout;
+	mod_sig_coil <= ssp_dout;
 end
 
 
