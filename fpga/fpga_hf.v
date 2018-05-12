@@ -103,7 +103,7 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
 // Change the bit on the rising edge of spck because the SPI will read it on the falling edge (because NCPHA = 1 and CPOL = 0). 
 //-----------------------------------------------------------------------------
-reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
+reg [15:0] miso_shift_reg; //FPGA to ARM
 //reg [15:0] miso_shift_reg_sig = 16'hAAAA;
 reg miso_sig = 0'b0;
 reg [3:0] spck_cntr = 4'd0; //counter should automatically roll over
@@ -117,7 +117,7 @@ assign miso = miso_sig;
 
 always @(negedge ncs) //beginning a new transmission
 begin
-	miso_shift_reg <= 16'hAAAA;
+	miso_shift_reg <= 16'hABCD;
 	//spck_cntr <= 4'd0;
 end
 //assign miso_shift_reg = miso_shift_reg_sig;
