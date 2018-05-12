@@ -109,7 +109,7 @@ reg miso_sig = 0'b0;
 reg [3:0] spck_cntr = 4'd0; //counter should automatically roll over
 always @(posedge spck)
 begin
-	miso_sig <= miso_shift_reg[spck_cntr];
+	miso_sig <= miso_shift_reg[15 - spck_cntr];
 	spck_cntr <= spck_cntr + 1;
 end
 
