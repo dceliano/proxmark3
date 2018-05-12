@@ -112,19 +112,22 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
 //-----------------------------------------------------------------------------
 reg [15:0] miso_shift_reg = 16'hAAAA; //FPGA to ARM
+reg miso_sig;
 always @(posedge spck)
 begin
 	if(~ncs)
-	begin
-		miso <= miso_shift_reg[0];
-		miso_shift_reg[14:0] <= miso_shift_reg[15:1];
-	end
+		begin
+			miso_sig <= miso_shift_reg[0];
+			miso_shift_reg[14:0] <= miso_shift_reg[15:1];
+		end
+	else
+		begin
+			miso_shift_reg <= 16'hAAAA; //reset the value of the miso after we sent out 16 bits of SPI data.
+		end
 end
 
-always @(posedge ncs) //reset the value of the miso after we sent out 16 bits of SPI data.
-begin
-	miso_shift_reg <= 16'hAAAA;
-end
+assign miso = miso_sig;
+
 
 
 //-----------------------------------------------------------------------------
