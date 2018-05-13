@@ -1641,8 +1641,19 @@ static int GetIso14443aAnswerFromTag(uint8_t *receivedResponse, uint8_t *receive
 				Dbprintf("Finished decoding (Manchester). Value of c=%d. Cycle count (for one bit) = %d", c, cycle_count);
 				Dbprintf("Number of bytes read from the ssp = %d", byte_count);
 				for(int j = 0; j < byte_count; j++){
+					//show exactly what was read from the SSP
 					//Dbprintf("Byte %d: ", j);
 					//Dbprintf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(byte_buffer[j]));
+				}
+				//Write to and read from SPI to get precise timestamp
+				while ((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_TXEMPTY) == 0);		// wait for the transfer to complete
+				AT91C_BASE_SPI->SPI_TDR = AT91C_SPI_LASTXFER;		// send the data
+				Dbprintf("About to collect timestamp over SPI.");
+
+				while ((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF) == 0);		// wait to receive data
+				if((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF)){
+					uint16_t recvd_from_spi = (uint16_t)AT91C_BASE_SPI->SPI_RDR;
+					Dbprintf("Just read timestamp over SPI. Timestamp (number of clock cyles) = %d.", recvd_from_spi);
 				}
 				return true;
 			} else if (c++ > iso14a_timeout && Demod.state == DEMOD_UNSYNCD) {

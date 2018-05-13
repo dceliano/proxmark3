@@ -523,12 +523,12 @@ void FpgaSendCommand(uint16_t cmd, uint16_t v)
 	SetupSpi(SPI_FPGA_MODE);
 	while ((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_TXEMPTY) == 0);		// wait for the transfer to complete
 	AT91C_BASE_SPI->SPI_TDR = AT91C_SPI_LASTXFER | cmd | v;		// send the data
-	Dbprintf("Just sent an FPGA command over SPI. Value of Receive Data Register Full (RDRF) = %d", (AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF));
+	//Dbprintf("Just sent an FPGA command over SPI. Value of Receive Data Register Full (RDRF) = %d", (AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF));
 
 	while ((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF) == 0);		// wait to receive data
 	if((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF)){
 		uint32_t recvd_from_spi = (uint32_t)AT91C_BASE_SPI->SPI_RDR;
-		Dbprintf("Just read SPI bits. Value = %08x. Receive data register full (RDRF) = %x", recvd_from_spi, (AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF));
+		//Dbprintf("Just read SPI bits. Value = %08x. Receive data register full (RDRF) = %x", recvd_from_spi, (AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF));
 	}
 }
 //-----------------------------------------------------------------------------

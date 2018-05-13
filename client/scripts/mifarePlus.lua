@@ -283,8 +283,8 @@ function main(args)
 
 	--writePerso()
 	--commitPerso("03") --move to SL3
-	--getVersion()
-	proximityCheck()
+	getVersion()
+	--proximityCheck()
 
 	--commandString = VERIFYPC .. "186EFDE8DDC7D30B"
 	-- MAC = f5180d6e 40fdeae8 e9dd6ac7 bcd3350b
