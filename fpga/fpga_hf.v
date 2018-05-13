@@ -42,7 +42,7 @@ reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get repor
 reg count_cycles_flag = 1'b0; //used to enable and disable the counter
 
 always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
-	if(spck_cntr == 15 && ~ncs) db_cycle_count <= 16'd0; //restart the timestamp. Might cut off a SPI bit at the end...need to double check.
+	if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the timestamp. Might cut off a SPI bit at the end...need to double check.
 	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
 	//else db_cycle_count <= 16'd0;
 	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping clock cycle count
