@@ -42,7 +42,7 @@ reg count_cycles_flag = 1'b0; //used to enable and disable the counter
 
 always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
 	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
-	else db_cycle_count <= 16'd0;
+	//else db_cycle_count <= 16'd0;
 	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping clock cycle count
 	if(mod_sig_coil == 1'b1) count_cycles_flag <= 1'b1; //Take beginning time stamp here by starting clock cycle count. mod_sig_coil is active low.
 end
@@ -125,6 +125,7 @@ reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 always @(posedge spck)
 begin
 	miso_sig <= db_cycle_count[15 - spck_cntr]; //send out MSbit first
+	//if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the timestamp
 	spck_cntr <= spck_cntr + 1;
 end
 
