@@ -37,7 +37,7 @@ reg curbit;
 //-----------------------------------------------------------------------------
 // Precise timing measurement code
 //-----------------------------------------------------------------------------
-reg db_cycle_count = 16'd0; //a 16-bit cycle counter which will get reported back to the ARM.
+reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get reported back to the ARM.
 reg count_cycles_flag = 1'b0; //used to enable and disable the counter
 
 always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
@@ -119,21 +119,21 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 // The SPI transmitter. Sends 16 bytes back to the ARM. Currently, the bits are meaningless, but what is received by the ARM should be 1010...1010
 // Change the bit on the rising edge of spck because the SPI will read it on the falling edge (because NCPHA = 1 and CPOL = 0). 
 //-----------------------------------------------------------------------------
-reg [15:0] miso_shift_reg; //FPGA to ARM
+//reg [15:0] miso_shift_reg; //FPGA to ARM
 reg miso_sig = 0'b0;
 reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 always @(posedge spck)
 begin
-	miso_sig <= miso_shift_reg[15 - spck_cntr]; //send out MSbit first
+	miso_sig <= db_cycle_count[15 - spck_cntr]; //send out MSbit first
 	spck_cntr <= spck_cntr + 1;
 end
 
 assign miso = miso_sig;
 
-always @(negedge ncs) //beginning a new SPI transmission to the ARM
-begin
-	miso_shift_reg <= 16'hABCD; //the 16 bits we are sending to the ARM
-end
+//always @(negedge ncs) //beginning a new SPI transmission to the ARM
+//begin
+//	miso_shift_reg <= 16'hABCD; //the 16 bits we are sending to the ARM
+//end
 
 
 //-----------------------------------------------------------------------------
