@@ -33,6 +33,7 @@ module fpga_hf(
 
 reg mod_sig_coil;
 reg curbit;
+reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 
 //-----------------------------------------------------------------------------
 // Precise timing measurement code
@@ -41,6 +42,7 @@ reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get repor
 reg count_cycles_flag = 1'b0; //used to enable and disable the counter
 
 always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
+	if(spck_cntr == 15 && ~ncs) db_cycle_count <= 16'd0; //restart the timestamp. Might cut off a SPI bit at the end...need to double check.
 	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
 	//else db_cycle_count <= 16'd0;
 	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping clock cycle count
@@ -121,11 +123,9 @@ wire [2:0] mod_type = hi_simulate_mod_type;
 //-----------------------------------------------------------------------------
 //reg [15:0] miso_shift_reg; //FPGA to ARM
 reg miso_sig = 0'b0;
-reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 always @(posedge spck)
 begin
 	miso_sig <= db_cycle_count[15 - spck_cntr]; //send out MSbit first
-	//if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the timestamp
 	spck_cntr <= spck_cntr + 1;
 end
 
