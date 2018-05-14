@@ -34,6 +34,7 @@ module fpga_hf(
 reg mod_sig_coil;
 reg curbit;
 reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
+wire pck_clkdiv;
 
 //-----------------------------------------------------------------------------
 // Precise timing measurement code
@@ -41,9 +42,8 @@ reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get reported back to the ARM.
 reg count_cycles_flag = 1'b0; //used to enable and disable the clock cycle counter
 
-always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
-	if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the cycle counter. We might cut off the LSbit which gets sent over SPI, but that is not very significant.
-	else if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
+always @(posedge pck_clkdiv) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
+	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
 	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping the clock cycle count whenever we detect a modulation.
 	if(ssp_dout == 1'b1)
 	begin
@@ -69,7 +69,6 @@ wire clk_copy = clk1 ^ clk2; //XOR makes it a copy of the original clock
 //Divide the clk_copy (which should be 48MHz) by 3 to produce a 16MHz clock
 reg [1:0] pos_count, neg_count;
 wire [1:0] r_nxt;
-wire pck_clkdiv;
 
 always @(posedge clk_copy)
 if (pos_count ==2) pos_count <= 0;
