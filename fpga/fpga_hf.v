@@ -42,10 +42,14 @@ reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get repor
 reg count_cycles_flag = 1'b0; //used to enable and disable the clock cycle counter
 
 always @(posedge ck_1356meg) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
-	if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the cycle counter. Might cut off a bit of the SPI...need to double check.
-	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
-	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping the clock cycle count
-	if(mod_sig_coil == 1'b1) count_cycles_flag <= 1'b1; //Take begin time stamp here by starting the clock cycle count. Note that mod_sig_coil is active low.
+	if(spck_cntr == 15) db_cycle_count <= 16'd0; //restart the cycle counter. We might cut off the LSbit which gets sent over SPI, but that is not very significant.
+	else if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
+	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping the clock cycle count whenever we detect a modulation.
+	if(ssp_dout == 1'b1)
+	begin
+		count_cycles_flag <= 1'b1; //Take start time stamp here by starting the clock cycle count. ssp_dout is 1 whenever we turn the carrier off.
+		db_cycle_count <= 16'd0;
+	end
 end
 
 //-----------------------------------------------------------------------------
