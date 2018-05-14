@@ -37,23 +37,37 @@ reg [3:0] spck_cntr = 4'd0; //counts to 15 and then rolls over to 0
 wire pck_clkdiv;
 
 //-----------------------------------------------------------------------------
-// Precise timing measurement code
+// Code to take precise timing measurements, which then get reported back to the ARM over SPI.
 //-----------------------------------------------------------------------------
 reg [15:0] db_cycle_count = 16'd0; //a 16-bit cycle counter which will get reported back to the ARM.
 reg count_cycles_flag = 1'b0; //used to enable and disable the clock cycle counter
 
-always @(posedge pck_clkdiv) begin //Use the 13.56MHz clock for counting clock cycles right now because 48MHz might overflow the counter. 
+always @(posedge pck_clkdiv) begin //Use the 16.00MHz clock for counting clock cycles. 48MHz could be used, but it would overflow the counter. 
 	if(count_cycles_flag == 1'b1) db_cycle_count <= db_cycle_count + 1;
-	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp here by stopping the clock cycle count whenever we detect a modulation.
-	if(ssp_dout == 1'b1)
+	if(curbit == 1'b1) count_cycles_flag <= 1'b0; //Take end time stamp by stopping the clock cycle count the first time we detect a modulation (so we detect the first bit received from the PICC).
+	if(ssp_dout == 1'b1) //ssp_dout is 1 whenever the carrier gets turned off.
 	begin
-		count_cycles_flag <= 1'b1; //Take start time stamp here by starting the clock cycle count. ssp_dout is 1 whenever we turn the carrier off.
-		db_cycle_count <= 16'd0;
+		count_cycles_flag <= 1'b1; //Take start time stamp by starting the clock cycle count whenever the carrier goes low.
+		db_cycle_count <= 16'd0; //make it so the timestamp begins the last time the carrier goes low (so we detect the last bit sent from the reader).
 	end
 end
 
 //-----------------------------------------------------------------------------
-// Produce a 16MHz clock, based on pck0, used for overclocking.
+// The SPI transmitter. Sends 16 bytes back to the ARM. Note that we change the
+// bit on the rising edge of spck because the SPI will read it on the falling edge (due to NCPHA = 1 and CPOL = 0). 
+//-----------------------------------------------------------------------------
+reg miso_sig = 0'b0;
+always @(posedge spck)
+begin
+	miso_sig <= db_cycle_count[15 - spck_cntr]; //send out MSbit first
+	spck_cntr <= spck_cntr + 1;
+end
+
+assign miso = miso_sig;
+
+
+//-----------------------------------------------------------------------------
+// Produce a 16MHz clock, based on pck0. The 16MHz clock is used for overclocking.
 //-----------------------------------------------------------------------------
 reg clk1 = 1'b0;
 reg clk2 = 1'b0;
@@ -118,19 +132,6 @@ assign major_mode = conf_word[7:5];
 wire [2:0] hi_simulate_mod_type = conf_word[2:0];
 wire [2:0] mod_type = hi_simulate_mod_type;
 
-
-//-----------------------------------------------------------------------------
-// The SPI transmitter. Sends 16 bytes back to the ARM. Note that we change the
-// bit on the rising edge of spck because the SPI will read it on the falling edge (due to NCPHA = 1 and CPOL = 0). 
-//-----------------------------------------------------------------------------
-reg miso_sig = 0'b0;
-always @(posedge spck)
-begin
-	miso_sig <= db_cycle_count[15 - spck_cntr]; //send out MSbit first
-	spck_cntr <= spck_cntr + 1;
-end
-
-assign miso = miso_sig;
 
 
 //-----------------------------------------------------------------------------
