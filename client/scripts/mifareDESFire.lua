@@ -13,7 +13,6 @@ PREPAREPC = "03F0"
 PROXIMITYCHECK = "03F2"
 VERIFYPC = "03FD"
 READPLAINNOMACUNMACED = "0336"
-CHANGEKEY = "03C4"
 
 --- 
 -- This is only meant to be used when errors occur
@@ -52,23 +51,6 @@ function sendRaw(rawdata, crc, power)
 		err = "Error sending the card raw data."
 		oops(err)
 	end
-end
-
-function changeKey(keynum, data)
-	-- Method writes 16 bytes of the string sent (data) to the specified 2-byte key number
-	-- The block numbers sent to the card need to be in little endian format (i.e. block 0x0001 is sent as 0x1000)
-	--blocknum_little_endian = string.sub(blocknum, 3, 4) .. string.sub(blocknum, 1, 2)
-	commandString = CHANGEKEY .. keynum .. SIXTEEN_BYTES_ZEROS .. data --Write 16 bytes (32 hex chars).
-	response = sendRaw(commandString, true, true) --0x90 is returned upon success
-	if string.sub(response, 3, 4) ~= "00" then
-		oops(("error occurred while trying to set key %s"):format(keynum))
-	end
-end
-
-function authenticateAES()
-	-- Used to try to authenticate with the AES keys we programmed into the card, to ensure the authentication works correctly.
-	commandString = AUTH_FIRST
-	commandString = commandString .. ""
 end
 
 function getVersion()
@@ -125,7 +107,7 @@ function proximityCheck()
 
 	--PC--
 	RndC = "0001020304050607" --Random Challenge
-	num_rounds = 8 --Needs to be 1, 2, 4, or 8
+	num_rounds = 1 --Needs to be 1, 2, 4, or 8
 	part_len = 8 / num_rounds
 	j = 1
 	RndR = ""
@@ -192,11 +174,9 @@ function main(args)
 		print(("Connected to card with a UID of %s."):format(info.uid))
 	end
 
-	--initialize the card
-	changeKey("21", SIXTEEN_BYTES_ZEROS) --explicitly set VCProximityKey
 
 	--getVersion()
-	--proximityCheck()
+	proximityCheck()
 
 	--commandString = VERIFYPC .. "186EFDE8DDC7D30B"
 	-- MAC = f5180d6e 40fdeae8 e9dd6ac7 bcd3350b

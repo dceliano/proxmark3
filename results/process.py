@@ -52,7 +52,7 @@ for array in fpga_times:
         #print(rndtimes)
         mean = numpy.mean(rndtimes) * (1/16e6) * 1e3
         stddev = numpy.std(rndtimes) * (1/16e6) * 1e3
-        print "FPGA mean = " + str(mean) + "ms, std_dev = " + str(stddev) + "ms"
+        print "FPGA mean = $%.4f" % mean + " \pm %.4f$" % stddev
         rndtimes = [armarray[i] for i in range(j, NUM_TRIALS*num_rounds, num_rounds)]
         #print "ARM times: "
         #print(rndtimes)
@@ -60,4 +60,4 @@ for array in fpga_times:
         ssp_clk = osc_clk / 16
         mean = numpy.mean(rndtimes) * (1/ssp_clk) * 1e3
         stddev = numpy.std(rndtimes) * (1/ssp_clk) * 1e3
-        print "ARM mean = " + str(mean) + "ms, std_dev = " + str(stddev) + "ms"
+        #print "ARM mean = $%.4f" % mean + " \pm %.4f$" % stddev

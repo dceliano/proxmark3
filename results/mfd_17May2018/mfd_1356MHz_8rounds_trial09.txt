@@ -1,0 +1,125 @@
+Execute command from commandline: script run mifareDESFire
+Prox/RFID mark3 RFID instrument          
+bootrom: master/v3.0.1-125-g618c220-dirty-suspect 2017-12-03 17:49:38
+os: mainwork/v3.0.1-477-g94130f2-suspect 2018-05-14 09:01:29
+LF FPGA image built for 2s30vq100 on 2018/ 5/12 at 18: 9:50
+HF FPGA image built for 2s30vq100 on 2018/ 5/14 at 10: 0:54
+          
+uC: AT91SAM7S256 Rev A          
+Embedded Processor: ARM7TDMI          
+Nonvolatile Program Memory Size: 256K bytes. Used: 190846 bytes (73). Free: 71298 bytes (27).          
+Second Nonvolatile Program Memory Size: None          
+Internal SRAM Size: 256K bytes          
+Architecture Identifier: AT91SAM7Sxx Series          
+Nonvolatile Program Memory Type: Embedded Flash Memory          
+proxmark3> script run mifareDESFire
+--- Executing: mifareDESFire.lua, args ''
+#db# Finished decoding (Manchester). Value of c=28. Cycle count (for one bit) = -598903          
+#db# Number of bytes read from the ssp = 29          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 1485.          
+#db# Finished decoding (Manchester). Value of c=55. Cycle count (for one bit) = -595383          
+#db# Number of bytes read from the ssp = 56          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 1410.          
+#db# Finished decoding (Manchester). Value of c=36. Cycle count (for one bit) = -590999          
+#db# Number of bytes read from the ssp = 37          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 1410.          
+#db# Finished decoding (Manchester). Value of c=55. Cycle count (for one bit) = -587343          
+#db# Number of bytes read from the ssp = 56          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 1410.          
+#db# Finished decoding (Manchester). Value of c=36. Cycle count (for one bit) = -583111          
+#db# Number of bytes read from the ssp = 37          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 1410.          
+#db# Finished decoding (Manchester). Value of c=100. Cycle count (for one bit) = -579167          
+#db# Number of bytes read from the ssp = 101          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 4129.          
+<sent>: 	  e050
+#db# Timed out while waiting for PICC response (c = 8198)!          
+#db# Number of bytes read from the ssp = 8198          
+No response from RATS.
+<sent>: 	  D01100
+#db# Timed out while waiting for PICC response (c = 8198)!          
+#db# Number of bytes read from the ssp = 8198          
+No response from PPS check.
+Connected to card with a UID of 040833424D4D80.
+<sent>: 	  03F0
+#db# Finished decoding (Manchester). Value of c=313. Cycle count (for one bit) = 1928          
+#db# Number of bytes read from the ssp = 314          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 36526.          
+<recvd>: 02900106A007D210
+OPT = 01 pubRespTime = 06A0 pps = 07
+<sent>: 	  03F20100
+#db# Finished decoding (Manchester). Value of c=214. Cycle count (for one bit) = 1424          
+#db# Number of bytes read from the ssp = 215          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27011.          
+<recvd>: 0362DC74
+<sent>: 	  03F20101
+#db# Finished decoding (Manchester). Value of c=214. Cycle count (for one bit) = 1424          
+#db# Number of bytes read from the ssp = 215          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27010.          
+<recvd>: 02711E4F
+<sent>: 	  03F20102
+#db# Finished decoding (Manchester). Value of c=214. Cycle count (for one bit) = 1424          
+#db# Number of bytes read from the ssp = 215          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 26935.          
+<recvd>: 031FBEDC
+<sent>: 	  03F20103
+#db# Finished decoding (Manchester). Value of c=215. Cycle count (for one bit) = 1432          
+#db# Number of bytes read from the ssp = 216          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27086.          
+<recvd>: 0256A31A
+<sent>: 	  03F20104
+#db# Finished decoding (Manchester). Value of c=215. Cycle count (for one bit) = 1432          
+#db# Number of bytes read from the ssp = 216          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27086.          
+<recvd>: 03367D60
+<sent>: 	  03F20105
+#db# Finished decoding (Manchester). Value of c=215. Cycle count (for one bit) = 1432          
+#db# Number of bytes read from the ssp = 216          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27086.          
+<recvd>: 022A48A3
+<sent>: 	  03F20106
+#db# Finished decoding (Manchester). Value of c=215. Cycle count (for one bit) = 1432          
+#db# Number of bytes read from the ssp = 216          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27162.          
+<recvd>: 03A88A1D
+<sent>: 	  03F20107
+#db# Finished decoding (Manchester). Value of c=215. Cycle count (for one bit) = 1432          
+#db# Number of bytes read from the ssp = 216          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 27161.          
+<recvd>: 023AC9B3
+RndC = 0001020304050607 RndR = 62711F56362AA83A
+Concatenation of random numbers = 62711F56362AA83A0001020304050607
+Final PCD concatenation before input into MAC function = FD0106A00762711F56362AA83A0001020304050607
+Padded MAC Input = FD0106A00762711F56362AA83A00010203040506078000000000000000000000, length (bytes) = 32
+8-byte PCD MAC_tag (placeholder - currently incorrect) = 710156032A053A07
+<sent>: 	  03FD710156032A053A07
+#db# Finished decoding (Manchester). Value of c=638. Cycle count (for one bit) = 4239          
+#db# Number of bytes read from the ssp = 639          
+#db# About to collect timestamp over SPI.          
+#db# Just read timestamp over SPI. Timestamp (number of clock cyles) = 14564.          
+<recvd>: 03904F3E746C214C261089D1
+03904F3E746C214C261089D1
+8-byte MAC returned by PICC = 4F3E746C214C2610
+Final PICC concatenation before input into MAC function = 900106A00762711F56362AA83A0001020304050607
+Padded MAC Input = 900106A00762711F56362AA83A00010203040506078000000000000000000000, length (bytes) = 32
+8-byte PICC MAC_tag (placeholder - currently incorrect) = 710156032A053A07
+<sent>: 	  OFF
+#db# Timed out while waiting for PICC response (c = 8198)!          
+#db# Number of bytes read from the ssp = 8198          
+
+-----Finished
